@@ -22,11 +22,11 @@ Para tener una copia de las notas localmente
   4. Doble click sobre el archivo .Rproj
   5. Instala el paquete ```bookdown```
    
-    - install.packages("bookdown")
+    install.packages("bookdown")
    
   6. En RStudio, dirígete al menú Session->Restart
-  7. Oprime la opción Build en el panel Enviorenment
-  8. Oprime el botón Build book
+  7. Oprime la opción Build en el panel Environment
+  8. Oprime la pestaña Build book
     
   
   
