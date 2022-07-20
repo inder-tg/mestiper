@@ -1,0 +1,707 @@
+
+# Análisis de tendencias {#trendAnalysis}
+
+En esta sección vamos a discutir algunas herramientas estadísticas para analizar
+la tendencia de una serie de tiempo. Existe una gran cantidad de métodos para
+analizar tendencias, aquí presentaremos aquellos de fácil implementación y gran 
+popularidad. Recomendamos asegurarse de incluir las siguientes líneas en el preámbulo
+de su sesión de trabajo en R:
+
+```{r libraries, eval=FALSE}
+library(fpp)
+library(forecast)
+library(Kendall)
+library(trend)
+library(RColorBrewer)
+library(gtools)
+```
+
+ya que en algunos de estos paquetes se encuentran las bases de datos que utilizaremos 
+en esta sección.
+
+Comencemos cubriendo un elemento básico: la descomposición de una serie de tiempo 
+en estacionalidad, tendencia y error de medición.
+
+## Descomposición STE {#STE}
+
+STE es el acrónimo en inglés de _seasonality_, _trend_ y _errors_^[El correspondiente acrónimo en español sería ETE y suena a película ochentera de ciencia ficción.]
+y refiere a la idea de **descomponer** una serie de tiempo en estos tres elementos.
+Vamos a usar un ejemplo para discutir los detalles de esta descomposición.
+
+En el paquete ```fpp``` encontramos la serie de tiempo ```ausbeer``` la cual contiene 
+la producción trimestral de cerveza en Australia a partir del tercer trimestre de 
+1957 hasta el segundo trimestre de 1973; la producción de cerveza es reportada en 
+miles de litros. De acuerdo a la Figura \@ref(fig:ausbeer)-**A**, a partir 
+del primer trimestre de 1962 la producción de cerveza en Australia observó un crecimiento sostenido. En la misma figura (panel **B**) observamos que los márgenes más altos de
+la producción se reportan en el cuarto ($Q_4$) y primer ($Q_1$) trimestres^[En Australia el verano ocurre del primero de diciembre a la última semana de febrero.]
+mientras los mínimos se reportan en el segundo y tercer trimestres, respectivamente.
+
+<!-- fig.align='center', fig.width=5, fig.height=5, -->
+
+<!-- % ----------------------------------------------------------------------------- -->
+
+```{r ausbeer, fig.cap="Producción trimestral de cerveza en Australia (megalitros) del 3er trimestre de 1957 al 2do trimestre de 1973.", fig.pos="h", out.width='.6\\linewidth'}
+data("ausbeer")
+tsBeer <- tail(head(ausbeer, 17*4+2), 17*4-4)
+
+yr <- range(as.numeric(tsBeer))
+yr[1] <- yr[1] - 25
+yr[2] <- yr[2] + 25
+par(mfrow=c(1,2))
+
+par(mar = c(2,2,1,2), adj = 0)
+plot(tsBeer, type = "l", main = "A",
+     pch = 16, col = "gray", ylim = yr)
+
+seasonplot(as.ts(tsBeer), main = "B",
+           col = c(rev(brewer.pal(9, "Reds")), brewer.pal(9, "Greens")))
+```
+
+<!-- ~\label{eq.STE} -->
+
+A partir de estas gráficas notamos los ciclos estacionales de producción
+y el aparente crecimiento sostenido de la producción de cerveza lo cual
+nos hace deducir que independientemente de los ciclos estacionales, la producción
+promedio ha ido en aumento año tras año. Estos elementos nos permiten
+pensar en una estrategia de modelación para ```ausbeer```. Denotemos con
+$y_t$ a la producción de cerveza en Australia al mes $t$, entonces, parece
+adecuado suponer que
+\begin{equation}
+  y_t = T_t + S_t + \varepsilon_t,\quad t = 1,\ldots,64, (\#eq:STE)
+\end{equation}
+donde $T_t$ y $S_t$ describen la produccón promedio y la 
+producción estacional de cerveza al tiempo (mes) $t$; $\varepsilon_t$ denota
+el posible error de medición al registrar los millardos de cerveza producida.
+En términos coloquiales a $T_t$ se le denomina _tendencia_ y a $S_t$
+componente estacional.
+
+Para los directivos de la cámara de cerveceros de Australia pudiera ser de
+interés establecer la estructura media y estacional de su producción.
+En términos estadísticos, nos preguntamos ¿cómo podemos estimar $T_t$ y $S_t$?
+
+<!-- % ----------------------------------------------------------------------------- -->
+
+## Medias móviles
+
+Como argumentamos arriba $T_t$ es la producción media de cerveza al tiempo $t$
+y por tanto debe ser sencillo calcular su contraparte muestral $\widehat{T}_t$,
+en principio sólo debemos calcular el promedio aritmético, ¿cierto? En efecto,
+sin embargo, debemos tener en cuenta la _ventana_ de observaciones que hemos
+de considerar para calcular tal promedio. Por ejemplo, al tiempo $t$, 
+¿consideramos una ventana de tamaño 1 o 2? Equivalentemente,
+¿debemos reportar
+$\widehat{T}_t^{(1)} = \mbox{promedio}\{y_{t-1}, y_t, y_{t+1}\}$ ó
+$\widehat{T}_t^{(2)} = \mbox{promedio}\{y_{t-2}, y_{t-1}, y_t, y_{t+1}, y_{t+2}\}$?
+
+Antes de observar las diferencias visuales entre $\widehat{T}_t^{(1)}$ y
+$\widehat{T}_t^{(2)}$, nos detenemos un momento para mencionar que éstos son
+dos elementos de una clase amplia de estimadores de tendencia llamado _medias
+móviles_. En términos generales una media móvil de orden $h$ tiene la siguiente representación:
+\begin{equation}
+  m_t^{(h)} = \sum_{k = t-h}^{t+h}\,c_k\,y_k,\quad t=h+1,\ldots,n-h. (\#eq:movingAverage)
+\end{equation}
+Esto es, al tiempo $t$, el cálculo de $m_t^{(h)}$ involucra $2h+1$ observaciones:
+$h$ observaciones tanto a la izquierda como a la derecha de $y_t$.
+El parámetro $h$ suele denominarse el orden de la media móvil, algunos
+autores también lo llaman ventana, y $2h+1$ se conoce como el 
+_ancho de banda_. Los coeficientes $c_k$ dictan el peso que se otorga
+a cada observación en el cálculo de $m_t^{(h)}$. Por ejemplo,
+$c_k$ puede ser constante e igual al recíproco multiplicativo del ancho
+de banda, es decir, $c_k = 1/(2h+1)$. En una nota posterior veremos que las
+medias móviles son un ejemplo de una clase general de estimadores coloquialmente
+conocida como suavizadores.
+
+Dado lo anterior, ahora ya sabemos que $\widehat{T}_t^{(1)}$ es una 
+media móvil de orden 1 con pesos constantes e igual a $1/3$. 
+Similarmente, $\widehat{T}_t^{(2)}$ es una media móvil de orden 2 con pesos
+constantes e igual a $1/5$.
+
+En la Figura \@ref(fig:MAausbeer)-**A** mostramos los estimadores de tendencia
+$\widehat{T}_t^{(1)}$, $\widehat{T}_t^{(2)}$ y el promedio de éstos; 
+en la figura señalamos estos estimadores con las leyendas $h=1$,
+$h=2$ y _TrendA_, respectivamente. 
+Se observa que tanto $\widehat{T}_t^{(1)}$ como 
+$\widehat{T}_t^{(2)}$ describen tendencias poco suaves. En este caso
+poco suave significa que las tendencias son segmentos de línea tal que las
+pendientes de estas líneas cambian alternativamente de positivo a negativo
+y viceversa. 
+Observa que al promediar $\widehat{T}_t^{(1)}$ y $\widehat{T}_t^{(2)}$ se 
+obtiene un nuevo estimador de la tendencia, _TrendA_, el cual tiene la particularidad 
+de que el cambio de pendiente de un segmento a otro es menos pronunciado, haciendo 
+que visualmente este estimador sea más suave.
+
+```{r MAausbeer, fig.width=5, fig.height=4, fig.cap = "Ejemplos de medias móviles.", fig.pos="h", out.width='.6\\linewidth', echo = FALSE}
+T1 <- getMA(y = tsBeer, h = 1, weight = 3)
+T2 <- getMA(y = tsBeer, h = 2, weight = 5)
+T3 <- tsBeer
+T3[1:length(tsBeer)] <- sapply(1:length(tsBeer), function(s) mean(c(T1[s], T2[s])))
+
+yr <- range(as.numeric(tsBeer), as.numeric(T1), 
+            as.numeric(T2), as.numeric(T3), na.rm = TRUE)
+yr[1] <- yr[1] - 25
+yr[2] <- yr[2] + 25
+
+par(mfrow=c(1,2))
+par(mar = c(2,2,1,2), adj = 0)
+plot(tsBeer, type = "l", col = "gray", ylim = yr, main = "A")
+lines(T1, col = "red")
+lines(T2, col = "blue")
+lines(T3, col = "green", lwd = 4)
+legend("topleft", legend = c("h=1", "h=2", "TrendA"), 
+       col = c("red", "blue", "green"), lwd = c(1,1,4), bty = "n")
+
+T1 <- getMA(y = tsBeer, h = 1, weight = 4)
+T2 <- getMA(y = tsBeer, h = 2, weight = 4)
+T3 <- tsBeer
+T3[1:length(tsBeer)] <- sapply(1:length(tsBeer), function(s) mean(c(T1[s], T2[s])))
+
+yr <- range(as.numeric(tsBeer), as.numeric(T1), 
+            as.numeric(T2), as.numeric(T3), na.rm = TRUE)
+yr[1] <- yr[1] - 25
+yr[2] <- yr[2] + 25
+
+plot(tsBeer, type = "l", main = "B", col = "gray", ylim = yr)
+lines(T1, col = "red")
+lines(T2, col = "blue")
+lines(T3, col = "green", lwd = 4)
+legend("topleft", legend = c("h=1", "h=2", "TrendB"), 
+       col = c("red", "blue", "green"), lwd = c(1,1,4), bty = "n")
+```
+
+En la Figura \@ref(fig:MAausbeer)-**B** proponemos otro estimador
+de tendencia el cual es visualmente más suave que los anteriores; 
+en la figura este estimador es la curva en color verde y le hemos asignado el
+nombre _TrendB_. En dicha figura también incluimos dos medias móviles
+de orden 1 y 2, líneas en rojo y azul, respectivamente, en ambos casos el peso
+asignado a cada observación es constante e igual a $1/4$. _TrendB_
+es el promedio de las líneas en rojo y azul.
+_TrendB_ es visualmente más suave que el resto de medias móviles
+presentadas en la Figura \@ref(fig:MAausbeer). Esta propiedad puede explicarse
+de la siguiente manera.
+<!-- % La aparente suavidad de este estimador de tendencia puede explicarse  -->
+<!-- % de la siguiente manera. Denotemos con $\mbox{Trend-A}$ y $\mbox{Trend-B}$ -->
+<!-- % a los estimadores suavizados de tendencia en Figura~\ref{fig:MAausbeer}-\textbf{A} y  -->
+<!-- % \textbf{B}, respectivamente.  -->
+No es difícil ver que
+\begin{align*}
+  \mbox{TrendA}_t 
+  &= 
+  \frac{4}{5}\,\widehat{T}_t^{(1)} + \frac{1}{10}(y_{t-2} + y_{t+2})\\
+  \mbox{TrendB}_t
+  &=
+  \frac{1}{4}\,\widehat{T}_t^{(1)} + \frac{1}{8}(y_{t-2} + y_{t+2}).
+\end{align*}
+La expresión de arriba muestra que $\widehat{T}_t^{(1)}$ está $16/5$ 
+veces más presente en $\mbox{TrendA}_t$ que en $\mbox{TrendB}_t$. 
+Consequentemente, aunque las propiedades de $\widehat{T}_t^{(1)}$, por ejemplo su 
+poca suavidad, son heredadas tanto a $\mbox{TrendA}_t$ como a $\mbox{TrendB}_t$ 
+éstas son más evidentes en $\mbox{TrendA}_t$ que en $\mbox{TrendB}_t$.
+
+En el Apéndice encontrarás la función _getMA_ la cual implementa el cálculo de 
+medias móviles de orden $h$ siguiendo \@ref(eq:movingAverage);
+los parámetros de esta función son $y$, un objeto de clase ```ts```,
+$h$, el orden de la media móvil y _weight_, el peso asignado a cada
+observación. 
+
+<!-- Acá parte del código que genera la Figura~\ref{fig:MAausbeer}. -->
+<!-- <<MAausbeerFake, cache = FALSE>>= -->
+<!-- T1 <- getMA(y = tsBeer, h = 1, weight = 3) -->
+<!-- T2 <- getMA(y = tsBeer, h = 2, weight = 5) -->
+<!-- T3 <- tsBeer -->
+<!-- T3[1:length(tsBeer)] <- sapply(1:length(tsBeer), function(s) mean(c(T1[s], T2[s]))) -->
+<!-- T1 <- getMA(y = tsBeer, h = 1, weight = 4) -->
+<!-- T2 <- getMA(y = tsBeer, h = 2, weight = 4) -->
+<!-- T3 <- tsBeer -->
+<!-- T3[1:length(tsBeer)] <- sapply(1:length(tsBeer), function(s) mean(c(T1[s], T2[s]))) -->
+<!-- @ -->
+
+Es posible obtener _TrendB_ utilizando la función ```ma``` del paquete
+```forecast``` con parámetros ```order=4``` y ```centre=TRUE```;
+véase la Figura \@ref(fig:maForecast).^[Para convencernos que _TrendB_ y 
+```trendBeer``` son iguales puedes imprimir estos objetos en la consola.]
+
+```{r maForecast, fig.cap="Media móvil suavizada", echo=c(1,6:8,13,14)}
+trendBeer <- ma(tsBeer, order = 4, centre = T)
+T1 <- getMA(y = tsBeer, h = 1, weight = 4)
+T2 <- getMA(y = tsBeer, h = 2, weight = 4)
+T3 <- tsBeer
+T3[1:length(tsBeer)] <- sapply(1:length(tsBeer), function(s) mean(c(T1[s], T2[s])))
+yr <- range(as.numeric(tsBeer), as.numeric(T3), as.numeric(trendBeer), na.rm = TRUE)
+yr[1] <- yr[1] - 25
+yr[2] <- yr[2] + 25
+par(mfrow=c(1,2))
+par(mar = c(2,2,1,2), adj = 0)
+plot(tsBeer, type = "l", main = "TrendB", col = "gray", ylim = yr)
+lines(T3, type = "l", col = "green", lwd = 5)
+plot(tsBeer, type = "l", main = "ma", col = "gray", ylim = yr)
+lines(trendBeer, type = "l", col = "orange", lwd = 5)
+```
+
+La suavidad de una media móvil es directamente proporcional al valor
+del orden $h$; un valor grande de $h$ asegura mayor suavidad mientras que un
+valor bajo crea una apariencia _áspera_ en el estimador.^[Nota que $h=0$ es el 
+valor más pequeño para el orden y que en este caso el estimador devuelve la serie 
+original.] Para determinar matemáticamente el valor **óptimo** de $h$ debemos 
+utilizar criterios adicionales los cuales serán presentados en una nota posterior.
+<!-- % cuando discutamos estimadores no-param\'etricos. -->
+
+En la práctica podemos utilizar información sobre la serie de tiempo bajo 
+consideración. Por ejemplo, en el caso de la producción de cerveza,
+parece adecuado incluir las observaciones  correspondientes a los 2 trimestres 
+anteriores y posteriores a $y_t$ en el cálculo de $\widehat{y}_t$;
+es decir, con $h=2$ incluimos el total producido a lo largo de un ciclo anual completo
+al estimar la producción promedio trimestral.
+
+
+<!-- % ----------------------------------------------------------------------------- -->
+
+## LOWESS
+
+Otra manera de obtener un estimador suavizado de la tendencia de una serie de
+tiempo es utilizando _regresión no-paramétrica_. En una sección posterior
+ahondaremos en esta clase de modelos estadísticos. Por ahora, sólo
+presentaremos un ejemplo de regresión no-paramétrica: LOWESS (Robust locally
+weighted regression). Este modelo es una extensión del modelo de regresión
+polinomial local ya que en su primera etapa el algoritmo ajustará en cada
+observación un polinomio de grado $d$; operativamente, el algoritmo
+resuelve un problema de mínimos cuadrados ponderados.^[El peso asignado a cada 
+observación varía en función de la distancia entre la observación y el punto a 
+ajustar. Por ejemplo, si quisieramos aproximar $y_t$ con una media móvil de orden 2, 
+en LOWESS, $y_{t-1}$ y $y_{t+1}$  recibirán mayor peso que $y_{t-2}$ y $y_{t+2}$.] 
+Luego se calcula la mediana de los residuales del ajuste de la primera etapa.
+Esta mediana sirve para actualizar la manera en la que se ponderan las observaciones;
+aquellas observaciones cuyo residual se encuentran muy alejado de la mediana 
+reciben menor peso. Con esta ponderación robusta se ajusta otro modelo de regresión 
+local polinomial ponderada. Estos dos pasos se repiten hasta alcanzar un criterio de convergencia. Los detalles de LOWESS se encuentran en [@cleveland1979].
+
+Para aplicar LOWESS en R sólo debemos invocar la función ```lowess``` incluida 
+en el paquete básico _stats_. Acá el código usado en esta nota:
+
+```{r LOWESS, fig.cap="LOWESS vs media móvil suavizada.", fig.pos="h"}
+par(mar = c(2,2,1,2))
+plot(tsBeer, type = "l", pch = 16, col = "gray", ylim = yr) #
+lines(lowess(time(tsBeer), tsBeer), lwd = 5, col="purple")
+par(new=T)
+plot(trendBeer, type = "l", col = "green", lwd = 5, yaxt ="n",
+     xaxt = "n", ylim = yr) #
+legend("topleft", lwd = c(5, 5), col = c("purple", "green"), bty = "n",
+       legend = c("LOWESS", "ma"))
+```
+
+La Figura \@ref(fig:LOWESS) muestra estimadores de la tendencia de la producción
+trimestral en Australia utilizando LOWESS y la media móvil suavizada que describimos
+arriba. Además de mejorar la estimación hacia el inicio y final de la serie,
+LOWESS provee un estimador más suave que la media móvil suavizada.
+Dejando a un lado estas características, las diferencias visuales entre un
+estimador y otro no son dramáticas. Además, considerando que únicamente
+necesitamos calcular una serie de promedios ponderados, la media móvil
+suavizada es una herramienta útil en cualquier análisis preliminar de series de tiempo. 
+Aquí concluimos nuestra discusión sobre cómo estimar la tendencia en una serie 
+de tiempo. A continuación presentaremos algunas ideas para calcular el componente 
+estacional.
+
+<!-- % ----------------------------------------------------------------------------- -->
+
+## Estacionalidad
+
+Supongamos ahora que los directivos de la cámara cervecera de Australia están
+interesados en el comportamiento estacional de su producción. De acuerdo a 
+la ecuación \@ref(eq:STE) esta componente estacional obedece la representación
+\[
+  S_t = y_t - T_t - \varepsilon_t.
+\]
+Como en la práctica los errores $\varepsilon_t$ no son observables, podemos 
+simplificar la presentación suponiendo que $y_t - T_t$ es una aproximación
+adecuada de $S_t$.
+En la sección anterior vimos algunos métodos para aproximar $T_t$, por lo que
+ahora podemos emplear alguno de esos estimadores de tendencia para aproximar 
+el componente estacional. Estamos diciendo que utilizar la expresión 
+$\widehat{S}_t = y_t - \widehat{T}_t$ es una manera lógica de conceptualizar
+una aproximación de $S_t$. 
+
+Por ejemplo, a la serie de tiempo original podemos restarle el valor del estimador 
+por media movil de orden $h=2$ suavizada descrito en la Figura \@ref(fig:maForecast)-**B**:
+
+```{r detrend}
+detrendBeer <- tsBeer - trendBeer
+mat_detrendBeer <- matrix(detrendBeer[!is.na(detrendBeer)], ncol = 4, byrow = T)
+seasonal_beer <- colMeans(mat_detrendBeer)
+ts(rep(seasonal_beer, 16), start = c(1958,1), frequency = 4)
+```
+
+Nota que las columnas de ```mat_detrendBeer``` contiene los valores
+de $y_t - \widehat{T}_t$ por cada trimestre. Por lo tanto ```seasonal_beer```
+es un vector con cuatro entradas, cada entrada reporta el promedio de producción
+por trimestre a lo largo de los años (de 1958 a 1973). 
+
+Alternativamente podemos usar la función ```decompose()``` para obtener
+esta clásica descomposición estacional por medias móviles. 
+La Figura \@ref(fig:decompose) muestra el resultado de aplicar esta función
+a los datos de producción trimestral de cerveza en Australia.
+
+```{r decompose, fig.cap="decompose() aplicada a tsbeer.", fig.pos="h"}
+decompose_beer <- decompose(tsBeer, "additive")
+str(decompose_beer)
+plot(decompose_beer)
+```
+
+La función ```stl()``` provee de forma automática una descomposición
+estacional utilizando LOWESS. Es recomendable leer la documentación de
+```stl``` y ```decompose``` ya que ambos métodos devuelven estimadores
+muy similares pero en diferente formato; véase el código siguiente. 
+La Figura \@ref(fig:stl) muestra el resultado de aplicar ```stl``` a los datos 
+de producción trimestral de cerveza en Australia.
+
+```{r stl, fig.cap="Uso de stl(). A) Series de tiempo original. B) Estimador de tendencia. C) Estimador de componente estacional. D) Residuales.", fig.pos="h"}
+stl_beer <- stl(tsBeer, "periodic")
+
+seasonal_stl_beer <- stl_beer$time.series[,1]
+trend_stl_beer <- stl_beer$time.series[,2]
+random_stl_beer <- stl_beer$time.series[,3]
+
+par(mfrow = c(2,2))
+par(mar = c(2,2,1,2), adj=0)
+plot(tsBeer, main = "A")
+plot(trend_stl_beer, main = "B")
+plot(seasonal_stl_beer, main = "C")
+plot(random_stl_beer, type = "h", main = "D")
+```
+
+<!-- % ----------------------------------------------------------------------------- -->
+
+# Prueba de Mann-Kendall
+
+En la sección anterior revisamos algunos métodos para extraer la tendencia
+y el componente estacional en una serie de tiempo.
+A continuación discutiremos la prueba Mann-Kendall, una prueba estadística
+_no paramétrica_ para determinar cuantitativamente la presencia de
+tendencia en series de tiempo. Los siguientes párrafos están basados en @mann1945
+y en los capítulos 4 y 5 de @kendall1962.
+
+Supongamos que tenemos elementos aleatorios $X_1,\ldots,X_n$ que son independientes
+y cada uno posee la misma distribución de probabilidad. 
+No es necesario suponer que la distribución de las $X_i$s es normal.
+Interpretando a Kendall diremos que _no existe alguna relación_ entre estas muestras
+poblacionales ($X_i$s). Interpretando a Mann diremos que la muestra (todo el conjunto
+de las $X_i$s) es completamente aleatoria. Para simplificar la presentación
+supondremos que $X_i\neq X_j$ para toda $j$ e $i$. 
+
+Consideremos el estadístico
+\begin{equation}
+  S_n = \sum_{i=1}^{n-1}\sum_{j=i+1}^{n}\,\mbox{signo}(X_j - X_i), (\#eq:S)
+\end{equation}
+donde
+\[
+  \mbox{signo}(X_j-X_i)
+  =
+  \begin{cases}
+    +1 & \mbox{ si }X_j - X_i > 0\\
+    -1 & \mbox{ si }X_j - X_i < 0
+  \end{cases}.
+\]
+Siguiendo la presentación de Mann es fácil demostrar que el valor medio
+de $S_n$ es cero.
+<!-- v\'ease el ap\'endice para una demostraci\'on.  -->
+Este hecho abre la puerta a la utilización del estadístico $S_n$ para determinar 
+tendencia en una serie de tiempo. 
+
+En efecto, cuando calculamos $\widehat{S}_n$, la contraparte muestral de $S_n$, 
+bajo el supuesto de ausencia de relación entre las observaciones o no tendencia, 
+entonces esperamos que $\widehat{S}_n$ sea pequeño, cercano a cero. Por otra parte, 
+si $|\widehat{S}_n|$ resulta _muy_ grande entonces es cuestionable el supuesto de 
+que no exise relación entre las observaciones.
+Nota que $|\widehat{S}_n|$ es muy grande cuando $\widehat{S}_n$ es un número positivo
+grande o cuando $\widehat{S}_n$ es un número negativo grande. Observa que el primero
+de estos casos ocurre cuando en \@ref(eq:S) las observaciones más recientes
+dominan a las observaciones más tempranas; este caso está en correspondencia con
+una tendencia creciente o positiva. Similarmente, cuando las observaciones tempranas
+dominan a las más recientes entonces $\widehat{S}_n$ es negativo y grande;
+este caso se asocia a la tendencia negativa o decreciente en una serie de 
+tiempo.
+
+Como en toda prueba de hipótesis, el cálculo del $p$-valor depende de la
+hipótesis de interés. Consideramos que los ejemplos de la siguiente sección 
+aclararán la mecánica del cálculo de esta probabilidad.
+
+Antes de pasar a los ejemplos debemos notar que la distribución de 
+probabilidades de $S_n$ es complicada de establecer; existen tablas para 
+$n\leq 10$. Para valores grandes de $n$, sin embargo, hacemos uso de la siguiente 
+aproximación normal.^[Sí, vamos a suponer que un valor grande es $n>10$.] 
+
+Arriba mencionamos que el primer momento central de $S_n$ es cero. 
+Algo de aritmética y algunas propiedades del funcional valor esperado
+nos permiten ver que
+\[
+  \VAR(S_n) = \frac{n(n-1)(2n+5)}{18} =: \sigma_n
+\]
+Usando elementos elegantes, uno de análisis y el otro de combinatoria, Mann y Kendall
+establecieron que cuando $n$ crece inconmensurablemente entonces los momentos centrales
+de $S_n$ son iguales a los momentos centrales de una normal con media cero y varianza $\sigma_n$. Los detalles de esta demostración se encuentran en las referencias 
+dadas arriba.
+
+La Figura \@ref(fig:Sn-normal) muestra la aproximación descrita arriba para algunos
+valores de $n$. Como se nota en esta figura $S_n$ toma valores en los números
+enteros, su distribución es simétrica alrededor de cero y
+no es difícil ver que sus valores máximo y mínimo son $n(n-1)/2$ y
+$-n(n-1)/2$.^[Nota que si $X_j > X_i$ para toda $j$ e $i$, entonces $S_n$
+es equivalente a sumar $n-1+n-2+\cdots+2+1$.] Considerando estos elementos,
+el estadístico para probar tendencia tiene la siguiente forma
+\[
+  T_n
+  =
+  \begin{cases}
+    \frac{S_n-1}{\sqrt{\VAR(S_n)}} & \mbox{ si } S_n > 0\\
+    \frac{S_n+1}{\sqrt{\VAR(S_n)}} & \mbox{ si } S_n < 0
+  \end{cases}.
+\]
+La resta y suma de uno en la definición de $T_n$ obedece a una conocida 
+_corrección por continuidad_; esto mejora la precisión en el cálculo
+de probabilidades al usar la aproximación normal.
+
+```{r Sn-normal, fig.cap="Aproximación normal del estadístico Sn. La línea roja muestra la densidad de una normal estándar. Las barras negras muestran el histograma de distribución de Sn.", fig.pos="h", echo=FALSE, warning=FALSE}
+par(mfrow = c(2,2), adj=0)
+par(mar = c(2,2,1,2))
+
+x <- seq( -5, 5, length.out = 100 )
+z <- dnorm(x)
+
+n <- 5
+varn <- n * (n-1) * (2*n+5) / 18
+out <- permutations(n=n,r=n,v=1:n)
+Sout <- numeric(nrow(out))
+for(i in 1:nrow(out)){
+  Sout[i] <- mk.test(out[i,])$estimates[1]
+}
+out <- hist(Sout/sqrt(varn), breaks = length(unique(Sout)) + 1, freq = F, 
+            plot = F)
+plot(out$mids, out$density, type = "h", main = "n=5", ylab = "Densidad",
+     xlab = "", lwd = 3)
+lines(x, y = z, col = "red", lwd = 3)
+# ---
+
+n <- 6
+varn <- n * (n-1) * (2*n+5) / 18
+out <- permutations(n=n,r=n,v=1:n)
+Sout <- numeric(nrow(out))
+for(i in 1:nrow(out)){
+  Sout[i] <- mk.test(out[i,])$estimates[1]
+}
+out <- hist(Sout/sqrt(varn), breaks = length(unique(Sout)) + 1, freq = F, 
+            plot = F)
+plot(out$mids, out$density, type = "h", main = "n=6", ylab = "Densidad",
+     xlab = "", lwd = 3)
+lines(x, y = z, col = "red", lwd = 3)
+
+n <- 7
+varn <- n * (n-1) * (2*n+5) / 18
+out <- permutations(n=n,r=n,v=1:n)
+Sout <- numeric(nrow(out))
+for(i in 1:nrow(out)){
+  Sout[i] <- mk.test(out[i,])$estimates[1]
+}
+out <- hist(Sout/sqrt(varn), breaks = length(unique(Sout)) + 1, freq = F, 
+            plot = F)
+plot(out$mids, out$density, type = "h", main = "n=7", ylab = "Densidad",
+     xlab = "", lwd = 3)
+lines(x, y = z, col = "red", lwd = 3)
+# ---
+
+n <- 8
+varn <- n * (n-1) * (2*n+5) / 18
+out <- permutations(n=n,r=n,v=1:n)
+Sout <- numeric(nrow(out))
+for(i in 1:nrow(out)){
+  Sout[i] <- mk.test(out[i,])$estimates[1]
+}
+out <- hist(Sout/sqrt(varn), breaks = length(unique(Sout)) + 1, freq = F, 
+            plot = F)
+plot(out$mids, out$density, type = "h", main = "n=8", ylab = "Densidad",
+     xlab = "", lwd = 3)
+lines(x, y = z, col = "red", lwd = 3)
+```
+
+<!-- % ----------------------------------------------------------------------------- -->
+
+## Ejemplos
+
+### Ruido blanco
+
+El término **ruido blanco** se usa para describir procesos aleatorios con
+media cero, varianza constante (y típicamente igual a uno) e independientes.
+Podemos usar R para simular un ruido blanco. En efecto, con ```rnorm(50)```
+simulamos una muestra de números aleatorios gausianos con media cero, varianza uno
+e independientes. Por tanto en esta muestra, y en el ruido blanco en general,
+no existe relación de dependencia entre las observaciones. Por tanto la hipótesis
+nula es que _no existe asociación_ entre las observaciones y la hipótesis
+alternativa es _que existe algún tipo de asociación_. 
+
+Como mencionamos arriba, estas hipótesis pueden interpretarse como 
+$H_0:\mbox{no existe tendencia}$ y $H_a:\mbox{existe tendencia (positiva o negativa)}$.
+Por tanto el $p$-valor en este caso es igual a
+\[
+  \textbf{P}\{ |T_n| > |\widehat{T}_n| \} = 2\,\textbf{P}\{T_n > |\widehat{T}_n|\}.
+\]
+
+Acá el código de esta simulación y la aplicación de la prueba Mann-Kendall.
+```{r ruido-blanco}
+muestra <- rnorm(50)
+(out <- mk.test(muestra))
+```
+
+Nota que el objeto ```out``` es una lista con otros nueve objetos.
+Con ```out$estimates``` podemos calcular el $p$-valor, y por completitud,
+y compararlo con el calculado por la función ```mk.test```:
+
+```{r ruido-blanco2}
+str(out)
+
+Tn <- (out$estimates[1]-1) / sqrt(out$estimates[2])
+pVal <- 2 * (1 - pnorm(abs(as.numeric(Tn))))
+pVal
+
+out$p.value
+```
+
+Con un $p$-valor así de grande no podemos rechazar la hipótesis nula de no existencia
+de tendencia en las observaciones simuladas -lo cual es un resultado esperado.
+
+### Producción trimestral de cerveza
+
+Como vimos en la primera sección de esta nota la producción trimestral
+de cerveza en Australia mantuvo un crecimiento sostenido en el periodo 1960-1973.
+Si quisiéramos agregar contenido cuantitativo a los análisis cualitativos
+presentados en las Figuras \@ref(fig:maForecast) y \@ref(fig:LOWESS) podemos 
+utilizar la prueba de Mann-Kendall sobre la tendencia estimada.
+
+En específico, tenemos el interés de establecer que el promedio de la producción
+trimestral de cerveza en Australia ha aumentado. Así nuestra hipótesis
+nula es $H_0:\mbox{no existe tendencia}$ y la hipótesis alternativa en este caso
+es $H_a:\mbox{existe una tendencia positiva}$.
+
+De acuerdo a estas especificaciones el p-valor asociado a la hipótesis nula
+es igual a $\textbf{P}\{ T_n > \widehat{T}_n \}$. En R obtenemos un
+$p$-valor de $3.9\times 10^{-9}$ por lo cual rechazamos **contundentemente**
+la hipótesis nula (en favor de la alternativa). Con un $p$-valor tan bajo se conluye
+que en el periodo en consideración la producción media de cerveza en Australia
+tuvo un crecimiento.
+
+```{r mannKendall-ausbeer}
+mk <- mk.test(x = as.numeric(trendBeer[!is.na(trendBeer)]), 
+              alternative = "greater")
+Tn <- (mk$estimates[1]-1) / sqrt(mk$estimates[2])
+pVal <- 1 - pnorm(as.numeric(Tn))
+pVal
+mk$p.value
+```
+
+### Concentración de sedimentos en el Río Rhine
+
+El río Rhine es una de los más importantes de Europa; nace en Suiza y su flujo
+se mueve principalmente hacia el norte pasando por Alemania y los Países Bajos.
+En el paquete ```trend``` se encuentra la base de datos ```maxau``` la
+cual reporta series de tiempo anuales de la concentración promedio de sedimentos
+(en mg/l) y la descarga promedio (en $m^3$) desde 1965 hasta 2009. Aquí nos
+concentraremos en la concentración de sedimentos.
+
+La Figura \@ref(fig:maxau) muestra la serie de tiempo de la concentración de 
+sedimentos junto con su tendencia estimada vía LOWESS; aparentemente, ha habido 
+un decrecimiento en la concetración de sedimentos desde 1965 hasta 2009. Usamos
+la prueba Mann-Kendall para probar esta hipótesis cuantitativamente.
+
+En este caso tenemos las hipótesis $H_0: \mbox{no existe tendencia}$ y
+$H_a:\mbox{existe tendencia negativa}$. El $p$-valor correspondiente a esta hipótesis
+es igual a $\textbf{P}\{ T_n \leq \widehat{T}_n \}$.
+
+```{r maxau, fig.cap="Concentración anual promedio de sedimentos en el Rhine de 1965 a 2009.", fig.pos="h", echo=FALSE}
+data("maxau")
+sedimentos <- maxau[,"s"]
+
+par(mar = c(2,2,1,2), adj=0)
+plot(sedimentos, col = "gray", ylab = "mg/l", main = "sedimentos")
+lines(lowess(time(sedimentos), sedimentos), lwd = 5, col = "purple")
+legend("topright", legend = c("raw data", "LOWESS"), col = c("gray", "purple"),
+       lty = rep(1,2), lwd = c(1,5), bty = "n")
+```
+
+En R usamos el siguiente código para efectuar la prueba Mann-Kendall a la serie 
+de tiempo de sedimentos:
+
+```{r maxau-test}
+out <- mk.test(sedimentos, alternative = "less")
+out
+Tn <- (out$estimates[1]+1) / sqrt(out$estimates[2])
+
+pVal <- pnorm(as.numeric(Tn))
+pVal
+
+out$p.value
+```
+
+A la luz de estos datos y el correspondiente $p$-valor de la prueba, podemos concluir
+que existe evidencia estadística de un decrecimiento en la concentración promedio 
+de sedimentos del río Rhine durante el periodo 1965-2009.
+
+# Estimador de tendencia lineal Theil-Sen
+
+En esta breve sección mostramos una herramienta para estimar la aparente
+tendencia lineal en una serie de tiempo. Nota que la prueba Mann-Kendall ayuda
+a determinar la existencia de tendencia, no necesariamente lineal, en una serie 
+de tiempo. Las siguientes ideas están basadas en @sen1968.
+
+Supongamos que tenemos elementos aleatorios $Y_1,\ldots,Y_n$ que son independientes
+y cada uno posee la misma distribución de probabilidad. 
+No es necesario suponer que la distribución de las $Y_i$s es normal.
+Para simplificar la presentación suponemos que $Y_i \neq Y_j$ para toda $j$
+e $i$.
+
+Supongamos también que en cualquier punto del tiempo $t$, $Y_t = a + b\,t$.
+La propuesta de Sen es estimar $a$ y $b$ de modo robusto.
+Observa que la pendiente entre cualesquiera dos puntos $(i, Y_i)$
+y $(j, Y_j)$ está dado por
+\[
+  b_{i,j}
+  =
+  \frac{Y_j - Y_i}{j-i}.
+\]
+Nota que $b_{i,j}$ es una cantidad aleatoria, ya que $Y_i$ y $Y_j$ son aleatorios,
+y consecuentemente el conjunto de pendientes $\{b_{i,j}: 1 \leq i < j \leq n\}$ 
+tiene una distribución de probabilidades. Aunque esta distribución es
+desconocida, esto no nos impide calcular la mediana de esta distribución y 
+utilizarla como un estimador robusto de $b$. Específicamente,
+\[
+  \widehat{b}
+  =
+  \mbox{mediana}\{b_{i,j}: 1 \leq i < j \leq n\}.
+\]
+Similarmente, un estimador robusto para $a$ está dado por
+\[
+  \widehat{a}
+  =
+  \mbox{mediana}\{ Y_t - \widehat{b}t: 1\leq t\leq n \}.
+\]
+En la referencia dada arriba podemos encontrar algunas propiedades de los 
+estimadores $\widehat{a}$ y $\widehat{b}$.
+
+Concluimos esta sección usando el estimador de Theil-Sen para describir una tendencia
+lineal en la serie de tiempo de sedimentos del río Rhine. Abajo se muestra
+el código usado para generar la Figura \@ref(fig:maxau-sen).
+
+```{r maxau-sen, fig.cap = "Estimador de tendencia lineal.", fig.pos="h"}
+out <- sens.slope(sedimentos)
+out
+
+b_hat <- as.numeric(out$estimates)
+a_hat <- median( sedimentos - b_hat * 1:length(sedimentos) )
+
+lineaTheilSen <- ts(a_hat + b_hat * 1:length(sedimentos), start = c(1965, 1),
+                    end = c(2009, 1), frequency = 1)
+
+par(mar = c(2,2,1,2), adj=0)
+plot(sedimentos, col = "gray", ylab = "mg/l", main = "sedimentos")
+lines(lineaTheilSen, lwd = 5, col = "lightcoral")
+legend("topright", legend = c("raw data", "linear trend"), 
+       col = c("gray", "lightcoral"), lty = rep(1,2), lwd = c(1,5), bty = "n")
+```
+
+
+<!-- # Bibliografía -->

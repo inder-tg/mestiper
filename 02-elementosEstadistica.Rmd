@@ -1,0 +1,1093 @@
+
+# Elementos de Estadística con R
+
+En este capítulo abordaremos temas como _aleatoriedad_, _ley de grandes números_,
+_teorema del límite central_, _modelo probabilístico_, _prueba de hipótesis_ y 
+_p-valor_. Consideramos que estos temas son los elementos básicos de la disciplina
+Estadística en su interacción con múltiples aplicaciones en Percepción Remota.
+
+## Aleatoriedad
+
+Incontrovertiblemente, hoy día ya nos hemos formado una idea del significado 
+de la expresión _evento aleatorio_. Seguro. Alguna vez jugamos cartas, participamos
+de alguna rifa, incluso, durante nuestra formación universitaria hemos sido expuestos
+al análisis del experimento de tirar un dado múltiples veces. Más aún, existen
+artículos científicos que ayudan a comprender la dinámica del tiempo de espera 
+de algunos autobuses en la Ciudad de México.^[Este ejemplo puede resonar en muchas 
+poblaciones en desarrollo pero parecerá inverosimil en aquellas poblaciones 
+desarrolladas.] Lo que todos estos ejemplos tienen en común es que no podemos 
+garantizar sus resultados y aparentemente éstos dependen del azar o de la suerte. 
+En otras palabras, en cada uno de estos ejemplos está presente un componente 
+de _incertidumbre_. Sin embargo, el resultado de un evento aleatorio no siempre 
+ocurre _tan al azar_, especialmente cuando el fenómeno se estudia a largo plazo.
+
+Por ejemplo, considera los números de la siguiente imagen y elige un número _al azar_.
+
+<div class="centered">
+  ![Figura 2. Selecciona un número al azar.](figs/numeros_al_azar.png){width=50%, height=35%}
+</div>
+
+Resulta que el 75% de la gente selecciona el 3, cerca del 20% elige el 2 o el 4.
+Si has seleccionado el 1, entonces perteneces a un grupo selecto ya que únicamente
+el 5% opta por este número. La psicología tiene hipótesis para explicar este fenómeno,
+en esta sección este ejemplo nos permite reflexionar sobre las estructuras inherentes
+a los procesos azarosos y cómo podemos usarlas a nuestro favor. Continuemos con
+otro ejemplo.
+
+Supongamos que la empresa de cereales _Buendía_ quiere incrementar sus ventas
+y para esto anuncia que cada caja de cereal contendrá tarjetas coleccionables de 
+atletas famosos. _Buendía_ anuncia que el 20% de las cajas contiene una foto del 
+multi campeón de boxeo Saúl "Canelo" Álvarez; el 30% una foto
+del futbolista Guillermo Ochoa y el 50% restante una foto de la multi medallista 
+olímpica en Tae Kwon Do, María del Rosario Espinoza. Supongamos que tienes interés
+en adquirir las 3 tarjetas. ¿Cuántas cajas de cereal esperas comprar hasta completar
+tu colección? Para intentar resolver esta pregunta usaremos R para construir un
+_modelo_.
+
+Vamos a tomar muestras al azar con reemplazo del conjunto de números $\{0,1,\ldots,8,9\}$ para
+simular la obtención de las tarjetas de los atletas -sin comprar cajas de cereal. 
+Diremos que hemos obtenido una foto del "Canelo" si en nuestra selección al azar
+obtuvimos 0 ó 1, una foto de Ochoa si obtuvimos 2, 3 ó 4 y diremos que nos tocó
+una foto de María del Rosario si obtuvimos un 5, 6, 7, 8 ó 9. Nota que de este
+modo cumplimos con los porcentajes anunciados por _Buendía_. En R podemos
+usar la función ```sample()``` para obtener componentes de nuestro _experimento_.
+
+```{r, echo=c(2)}
+set.seed(101)
+sample(0:9,1)
+```
+
+Con el comando de arriba obtuvimos un 8, lo cual equivale a haber comprado una caja
+de cereal que contenía una foto de María del Rosario. 
+Nota que tendrás que ejecutar ```sample(0:9,1)``` muchas veces hasta conseguir
+completar tu colección de tarjetas. Cuando completes tu colección diremos que hemos
+realizado un _ensayo_ de nuestro experimento de simulación.
+¿Cuántas veces has tenido que ejecutar ```sample(0:9,1)``` hasta completar
+un ensayo? Nota que este número es tu _variable de interés_.
+
+En el archivo ```/Rscripts/funciones_auxiliares.R``` hemos escrito la función 
+```getTrial()``` para simular valores de la variable de interés. Así, un llamado 
+a esta función produce (```$ouput```)
+
+```{r, echo=c(2)}
+set.seed(101)
+getTrial()
+```
+
+lo cual significa que en este caso necesitamos 7 (```$numComponents```) componentes 
+para completar nuestro ensayo. Quizás este número es diferente del valor
+que obtuviste al responder la pregunta del párrafo anterior. Para tener una mejor
+comprensión de este fenómeno usemos R para repetir este experimento muchas veces.
+
+```{r, echo=c(-1)}
+set.seed(101)
+outcome <- c()
+for(sim in 1:1000){
+  outcome <- c(outcome, getTrial()$numComponents)
+}
+
+boxplot(outcome)
+legend("topright", legend = c(paste0("Mediana: ", median(outcome))), bty="n")
+```
+
+El código de arriba permite simular 1000 ensayos de nuestro experimento. Basado
+en este estudio de simulación concluimos que quien tenga interés en completar
+una colección de las tarjetas de cereales _Buendía_ necesitará comprar una mediana
+de 6 cajas -pero puede necesitar comprar más.
+
+## Ley de Grandes Números
+
+  - Simulemos haber tirado $1, 2, \ldots, 9, 10$ volados
+  
+  - En cada caso calculemos el **promedio aritmético** (media muestral) y la desviación
+  estándard
+  
+```{r, size="tiny"}
+sims <- 1:10
+
+for(i in sims){
+  TEMP <- rbinom(i,1,0.5)
+  cat("No. Volados:", i, "Media:", mean(TEMP), "Desv. Est.:", sd(TEMP), "\n")
+}
+```
+
+  Incrementando el número de simulaciones y resumiendo los resultados en gráficas
+  obtenemos:
+  
+```{r}
+sims <- c(5,50,500,5000)
+
+par(mfrow=c(2,2), mar=c(5,4.5,2,2))
+
+for(i in sims){
+  TEMP <- LLN2(i)
+  plot(1:i, TEMP$media, type = "l", col = "green", 
+       xlab = "Tamaño de muestra", ylab = "Promedio")
+  abline(h=0.5, col = "blue", lty = 2, lwd = 2)
+}
+```
+
+Los resultados empíricos vistos arriba son un ejemplo de la denominada **Ley de
+los Grandes Números**:
+
+<div class="centered">
+  ![Figura 3. Ley de los Grandes Números.](figs/LLN.png){width=50%, height=35%}
+</div>
+
+  Esta ley da lugar a la interpretación frecuentista de la probabilidad de un 
+  evento. Denotemos con la letra $\tetxbf{A}$ cualquier evento de interés, entonces
+  \[
+    \mbox{P}\{ A \} 
+    = 
+    \frac{\mbox{Número de veces que ocurre } \textbf{A}}{\mbox{Número de ensayos}},
+  \]
+  _a largo plazo_.
+
+<div class="centered">
+  ![Figura 4. Jacob Bernoulli fue la primera persona en demostrar la Ley de los Grandes Números.](figs/jacobBernoulli.jpg){width=50%, height=35%}
+</div>
+  
+
+## Teorema del Límite Central
+
+  - Tira un dado (justo) digamos, 10,000 veces
+  
+  - El histograma de este experimento, luce más o menos así:
+  
+```{r, echo = FALSE}
+tiros <- sample(1:6, 10000, replace = TRUE)
+hist(tiros, prob = TRUE, right = FALSE, main = "")
+```
+
+  - Tira tres dados, calcula el promedio, repite 10,000 veces
+  
+  - El histograma de este experimento luce más o menos así:
+
+```{r, echo = FALSE}
+tiro1 <- sample(1:6, 1e4, replace = TRUE)
+tiro2 <- sample(1:6, 1e4, replace = TRUE)
+tiro3 <- sample(1:6, 1e4, replace = TRUE)
+
+output <- (tiro1 + tiro2 + tiro3)/3
+
+hist(output, breaks = 20, main = "")
+```
+
+  - Tira cinco dados, calcula el promedio, repite 10,000 veces
+  
+  - El histograma de este experimento luce más o menos así:
+
+```{r, echo = FALSE}
+tiro1 <- sample(1:6, 1e4, replace = TRUE)
+tiro2 <- sample(1:6, 1e4, replace = TRUE)
+tiro3 <- sample(1:6, 1e4, replace = TRUE)
+tiro4 <- sample(1:6, 1e4, replace = TRUE)
+tiro5 <- sample(1:6, 1e4, replace = TRUE)
+
+output <- (tiro1 + tiro2 + tiro3 + tiro4 + tiro5)/5
+
+mu <- mean(output)
+sd <- sd(output)
+
+x <- seq(1,6, by = 0.1)
+y <- dnorm(x = x, mean = mu, sd = sd)
+
+hist_output <- hist(output, breaks = 20, plot = FALSE)
+
+hist(output, breaks = 20, probability = TRUE, main = "")
+par(new=T)
+plot(x, y, type = "l", col = "red", lwd = 3, 
+     ylab = "", xlab = "", main = "",
+     ylim = range(hist_output$density), xlim = range(hist_output$mids),
+     xaxt = "n", yaxt = "n")
+```
+
+
+  - En el ejemplo anterior, después de calcular el promedio de los tiros, restamos
+  la media de esta cantidad aleatoria y dividimos entre su desviación estándar
+  
+```{r, echo = FALSE}
+tiro1 <- sample(1:6, 1e4, replace = TRUE)
+tiro2 <- sample(1:6, 1e4, replace = TRUE)
+tiro3 <- sample(1:6, 1e4, replace = TRUE)
+tiro4 <- sample(1:6, 1e4, replace = TRUE)
+tiro5 <- sample(1:6, 1e4, replace = TRUE)
+
+output <- (tiro1 + tiro2 + tiro3 + tiro4 + tiro5)/5
+
+mu <- mean(output)
+sd <- sd(output)
+
+output_std <- (output - mu)/sd
+
+x <- seq(-5, 5, by = 0.1)
+y <- dnorm(x = x, mean = 0, sd = 1)
+
+hist_output_std <- hist(output_std, breaks = 20, plot = FALSE)
+
+hist(output_std, breaks = 30, probability = TRUE, main = "", xlab = "output", 
+     ylab = "Density")
+par(new=T)
+plot(x, y, type = "l", col = "red", lwd = 3, 
+     ylab = "", xlab = "", main = "",
+     ylim = range(hist_output_std$density), xlim = range(hist_output_std$mids),
+     xaxt = "n", yaxt = "n")
+```
+
+El resultado empírico mostrado arriba es un ejemplo del denominado **Teorema del
+Límite Central**
+
+<div class="centered">
+  ![Figura 4. Teorema del Límite Central.](figs/CLT.png){width=50%, height=35%}
+</div>
+
+
+## Prueba de hipótesis y p-valor
+
+La historia hasta ahora. En el capítulo anterior aprendimos la importancia del
+teorema de límite central o ¿porqué solemos calcular el promedio aritmético (media)
+a muchas de las bases de datos que llegan a nuestras manos? La respuesta radica 
+en el hecho que cuando el tamaño de la muestra aumenta entonces la
+distribución de probabilidades del promedio aritmético se aproxima a la mundialmente
+famosa _curva de Gauss_. Esta curva de Gauss es propiamente, en el mundo matemático,
+conocida como la densidad de una normal estándar. Y calcular probabilidades utilizando
+una normal estándar es muy sencillo, ¿cierto?
+
+Recordemos que usamos el símbolo $f(z)$ para referirnos a la función de densidad
+de la normal estándar ($Z$). Los símbolos $\textbf{P}\{ Z \leq q_z \}$ se leen
+como _la probabilidad que la normal estándar sea menor que_ $q_z$. Matemáticamente
+esto equivale a calcular el área definida por la gráfica 
+$\{ (z, f(z)) \mbox{ para todo } z \leq q_z \}$. Por ejemplo, supongamos que $q_z = -1.644854$
+entonces, visualmente, $\textbf{P}\{Z \leq q_z\}$ es igual a
+calcular el área de la región sombreada en la Figura \@ref(fig:probZ).
+
+```{r probZ, fig.width=5, fig.height=5, fig.cap = "Densidad de la normal estándar", fig.pos="h", out.width='.6\\linewidth', echo=FALSE}
+par(bg="honeydew")
+x <- seq(-5, 5, by = 0.1)
+y <- dnorm(x = x, mean = 0, sd = 1)
+
+qz <- qnorm(0.05)
+xz <- x
+xz[x >= qz] <- NA
+yz <- y
+yz[x >= qz] <- NA
+
+yRan <- range(y)
+xRan <- range(x)
+
+plot(x, y, type = "l", col = "red", lwd = 3, 
+     ylab = "f(z)", xlab = "", main = "P( Z < q_z )", ylim = yRan,
+     xlim = xRan, cex.main = 0.8)
+par(new = TRUE)
+plot(yz, type = "h",  ylim = yRan, xaxt = "n", yaxt = "n", 
+     xlab = "z", ylab = "")
+```
+
+Existen otras distribuciones de probabilidad, sin embargo, la
+normal estándar aparece como la distribución límite (cuando el tamaño de muestra
+es obscenamente grande) de una plétora de estadísticos lo cual es de mucha
+utilidad. 
+
+En general, el cálculo de probabilidades con cualquier distribución se reduce
+a calcular el área bajo una curva, tal cual lo hemos explicado arriba. Ahora
+ya podemos comenzar a discutir los temas de este capítulo: pruebas de hipótesis
+y el _$p$-valor_. Iniciamos con una presentación de ideas para después movernos 
+a presentar definiciones formales.
+
+### Prueba de hipótesis y $p$-valor al jugar cartas
+
+<!-- % Esta secci\'on est\'a basada en \cite{humphrey2012ap} y en el Cap\'itulo 20 de \cite{bock2010stats}. -->
+La típica baraja inglesa tiene 52 cartas, la mitad de éstas son rojas y la otra 
+mitad son negras. Si alguien nos presentara un mazo de estas cartas y nos solicitara 
+extraer una carta, intuitivamente, del total de 52 opciones, tendríamos 26 oportunidades 
+de extraer una carta roja. Es decir, intuitivamente, existe una probabilidad 
+$p=26/52=0.5$ de extraer una carta roja.^[Nótese que la probabilidad
+de extraer una carta negra del mismo mazo es $p=0.5$ también.]
+El _modelo probabilístico_ que nos ayuda a comprender la aleatoriedad en
+este juego es el modelo Bernoulli con parámetro $p=0.5$, en símbolos $\mathbf{Ber}(p)$.
+
+Supongamos que el aforo de nuestro seminario es de 25 personas y que cada uno
+de los asistentes tendrá la oportunidad de tomar una carta de un típico
+mazo de cartas inglesas. Supongamos que por alguna razón al concluir este juego, 
+nos interesa saber cuántas veces se ha extraido una carta roja
+del mazo^[Después de extraer la carta ésta es devuelta al mazo el cual es presentado 
+a la siguiente persona.] Podemos usar el modelo $\mathbf{Ber}(p)$ y nuestro conocimiento 
+del teorema del límite central para comprender la aleatoriedad de este nuevo juego.
+
+En efecto, podemos suponer que el color de la carta extraida por una persona
+es _independiente_ al color de la carta extraida por cualquier otra persona.
+En símbolos, si $X_i$ representa el resultado de un modelo
+$\mathbf{Ber}(p)$ efectuado por la $i$-\'esima persona, entonces
+$X_1+X_2+\cdots+X_i$ representa el n\'umero de cartas rojas extraidas por las
+$i$ personas que hasta ese momento han sacado una carta del mazo.
+Además, es conocido que el valor esperado y la varianza del modelo $\mathbf{Ber}(p)$ 
+son $\mu=p$ y $\sigma^2=p(1-p)$, respectivamente. Aunque $n=25$ está muy
+alejado de _asymptotia_ podemos usar la conclusión del teorema del límite central 
+como una aproximación^[Al final del día, el teorema del límite central es en sí una aproximación] y escribir
+\[
+  \sqrt{n}( \frac{1}{n}(X_1+\cdots+X_n) -\mu ) \approx \mathbf{N}(0,\sigma^2),
+\]
+o equivalentemente,
+\[
+  T_n := X_1+\cdots+X_n \approx \mathbf{N}(n\mu, n\sigma^2).
+\]
+
+En nuestro ejemplo tenemos que $n=25$, $\mu=0.5$ y $\sigma=0.25$ por lo cual
+la función de densidad del elemento aleatorio $T_n$ luce como en la Figura \@ref(fig:Tn-densidad2).
+
+```{r test, echo=FALSE, include=FALSE}
+x <- seq(0,25, by = 0.05)
+y <- dnorm(x = x, mean=12.5, sd=2.5)
+
+xz <- x
+xz[x >= 12.5 + 2 * 2.5] <- NA
+xz[x < 12.5 - 2 * 2.5] <- NA
+
+yz <- y
+yz[x >= 12.5 + 2 * 2.5] <- NA
+yz[x < 12.5 - 2 * 2.5] <- NA
+
+yRan <- range(y, yz, na.rm = T)
+
+plot(x, y, type = "l", col = "red", lwd = 3,
+     ylab = expression(f[T[n]]), xlab = "", main = "",
+     ylim = yRan)
+```
+
+Prestemos atención al área determinada por esta curva y los puntos
+$(7.5, f_{T_n}(7.5))$ y $(17.5, f_{T_n}(17.5))$; véase la Figura \@ref(fig:Tn-densidad2). 
+En otras palabras, buscamos
+\[
+  \mathbf{P}\{ 7.5 \leq T_n \leq 17.5 \}
+  =
+  \mathbf{P}\{Tn \leq 17.5\}-\mathbf{P}\{Tn \leq 7.5\}
+  =?
+\]
+Resulta que esta probabilidad es aproximadamente $0.95$:
+<!-- % 1-2*pnorm(7.5,mean=12.5,sd=2.5) -->
+```{r prob}
+pnorm(17.5,mean=12.5,sd=2.5)-pnorm(7.5,mean=12.5,sd=2.5)
+```
+
+
+```{r Tn-densidad2, echo=FALSE, fig.cap="En negro se muestra la probabilidad que Tn tome valores en el intervalo (7.5, 17.5).", fig.pos="h", out.width='.6\\linewidth'}
+x <- seq(0, 25, by=0.05)
+y <- dnorm(x=x, mean=12.5, sd=2.5)
+
+xz <- x
+xz[x >= 12.5 + 2 * 2.5] <- NA
+xz[x < 12.5 - 2 * 2.5] <- NA
+
+yz <- y
+yz[x >= 12.5 + 2 * 2.5] <- NA
+yz[x < 12.5 - 2 * 2.5] <- NA
+
+yRan <- range(y,yz,na.rm = T)
+
+plot(x, y, type = "l", col = "red", lwd = 3,
+     ylab=expression(f[T[n]]), xlab = "", main = "",
+     ylim=yRan)
+par(new = TRUE)
+plot(x,yz, type = "h",
+     ylim = yRan,
+     xlab = "z", ylab = "")
+abline(v=7.5, col="blue", lty=2)
+abline(v=17.5, col="blue", lty=2)
+```
+
+<!-- <<Tn-densidad2, echo=FALSE, fig.width=5, fig.height=4, fig.pos='h', out.width='0.5\\linewidth', fig.cap="Probabilidad que Tn tome valores en el intervalo.">>= -->
+<!-- x <- seq(0,25, by = 0.05) -->
+<!-- y <- dnorm(x = x, mean=12.5, sd=2.5) -->
+
+<!-- xz <- x -->
+<!-- xz[x >= 12.5 + 2 * 2.5] <- NA -->
+<!-- xz[x < 12.5 - 2 * 2.5] <- NA -->
+
+<!-- yz <- y -->
+<!-- yz[x >= 12.5 + 2 * 2.5] <- NA -->
+<!-- yz[x < 12.5 - 2 * 2.5] <- NA -->
+
+<!-- yRan <- range(y,yz,na.rm = T) -->
+
+<!-- plot(x, y, type = "l", col = "red", lwd = 3, -->
+<!--      ylab=expression(f[T[n]]), xlab = "", main = "", -->
+<!--      ylim=yRan -->
+<!--      ) -->
+<!-- par(new = TRUE) -->
+<!-- plot(x,yz, type = "h", -->
+<!--      ylim = yRan, -->
+<!--      # ylab="f_T", -->
+<!--      # xaxt = "n", yaxt = "n", -->
+<!--      xlab = "z", ylab = "") -->
+<!-- abline(v=7.5, col="blue", lty=2) -->
+<!-- abline(v=17.5, col="blue", lty=2) -->
+<!-- @ -->
+
+En conclusión, si después de contar las cartas rojas extraidas por nuestro
+hipotético grupo de participantes obtenemos 10, 12, ó 15 cartas, de acuerdo
+a los argumentos presentados hasta ahora, cualquiera de estos resultados se encuentra en el ámbito de lo esperado, de lo plausible. Es decir, haber obtenido
+13 cartas rojas es un evento con probabilidad alta, un evento como éste ocurrirá frecuentemente. ¿Qué pensarías si como resultado de nuestro juego obtenemos 19 cartas rojas? Antes de responder esta pregunta, hagamos una pausa para dar un contexto 
+general a los conceptos surgidos a partir del ejemplo mostrado hasta ahora.
+<!-- % Lo que sigue est\'a basado del Cap\'itulo 20 de \cite{bock2010stats}. -->
+
+Hemos partido de establecer una _hipótesis_ sobre la condición que guarda
+un parámetro dentro de un modelo probabilístico (hemos supuesto que
+$p=0.5$ en el modelo Bernoulli). Haciendo uso de resultados conocidos establecimos
+un modelo de trabajo equivalente, aproximado y afín con los conceptos presentados hasta ahora en este seminario (el modelo Gausiano). Tanto la hipótesis como los
+modelos probabilísticos usados en nuestro ejemplo de las cartas se han supuesto
+_verdaderos/correctos_. A través de experimentación hemos obtenido _datos_.
+Ahora nos encontramos ante la interrogante, ¿**dada la hipótesis (verdadera), son los datos obtenidos _sorprendentes_**? En general, podemos calcular qué tan probable serían 
+los datos observados si el modelo proabilístico seleccionado explicara 
+_correctamente_ el fenómeno bajo consideración. Es decir, debemos calcular una
+**probabilidad**. Para ser precisos, queremos encontrar la probabilidad de
+observar datos como los registrados (o incluso datos aún menos plausibles)
+dado que la hipótesis de trabajo es verdadera. Esta probabilidad recibe el
+nombre de **$p$-valor**.
+
+Cuando el p-valor es _alto_, entonces no hemos observado algo inusual o
+sorprendente.^[Por ejemplo, arriba reflexionamos sobre la relativamente alta
+probabilidad de obtener 13 cartas rojas en un total de 25 intentos por extraer una carta de la baraja inglesa.] Podemos decir que eventos que tienen una probabilidad
+alta ocurren con una alta frecuencia. En general, podemos decir que los datos son
+consistentes con el modelo asociado con la hipótesis de trabajo. Por tanto
+no tenemos razones para rechazar/descartar la hipótesis. Nota, sin embargo, que
+otras hipótesis, similares a la seleccionada, pueden estar en línea con los datos
+registrados, por tanto con un $p$-valor alto _no hemos probado que la
+hipótesis es verdadera_. Lo que sí podemos aseverar es que la hipótesis
+no parece falsa. Formalmente, **fallamos en rechazar** la hipótesis. Sí,
+es una aseveración débil pero es lo que hay.
+
+Cuando el $p$-valor es suficientemente _bajo_, entonces estamos en presencia
+de datos que son poco probables de observarse _si_ la hipótesis de trabajo
+fuera verdadera. Recapitulando, seleccionamos un modelo, ahora este modelo nos
+dice que los datos observados son poco probables de haber ocurrido. Es decir,
+existe una discrepancia entre el modelo y los datos, por tanto debemos tomar
+una decisión. Ya sea que la hipótesis es correcta y hemos observado datos
+extraordinarios o bien, la hipótesis es incorrecta y de modo inadecuado la hemos
+usado para derivar el $p$-valor. Quizás otro modelo sea correcto y los datos en
+realidad no son tan extraordinarios como aparentan. Si ustedes creen en datos más
+que en supuestos, entonces, dada esa opcián, deberían rechazar la hipótesis.
+
+Retomando el ejemplo de las cartas, ¿qué pensarías si como resultado de nuestro juego obtenemos 19 cartas rojas? A la luz de los párrafos anteriores
+ahora podemos responder haciendo uso del p-valor correspondiente. La pregunta puede
+parafrasear como _¿qué tan probable es obtener al menos 19 cartas rojas?_.
+Haciendo uso del elemento aleatorio $T_n$ y del modelo Gausiano, escribimos:
+\[
+  \mbox{p-valor} = \mathbf{P}\{ T_n \geq 19 \} = 1-\mathbf{P}\{ T_n < 19 \}.
+\]
+Resulta que este p-valor es prácticamente 0.0046:
+```{r p-valor}
+1-pnorm(19,mean=12.5,sd=2.5)
+```
+
+Si comparamos este $p$-valor con el canónico nivel de significancia 0.05, podemos concluir
+que el $p$-valor obtenido es muy bajo y que por tanto contamos con evidencia
+para rechazar la hipótesis. Recordando que nuestra hipótesis es $p=0.5$,
+la aseveración que podemos hacer a la luz del $p$-valor 0.0046 es que dudamos que
+la baraja efectivamente contenga el mismo número de cartas rojas que negras.
+
+
+### Prueba de hipótesis
+
+Lo primero que debemos discutir sobre el concepto de prueba de hipótesis
+_estadística_ es la validez de la hipótesis _científica_ de interés.
+Así es, antes de mirar en nuestra caja de herramientas y buscar el artefacto técnico
+(modelo estadístico) que mejor nos ayuda a explicar los datos, mucho antes incluso
+de tener datos, debemos contar con una pregunta de interés que a todas luces
+parezca científica. ¿Existe alguna asociación entre el fenómeno El Niño
+y la sequía en México? ¿La temperatura promedio en el país ha incrementado en los
+últimos 20 años? ¿El promedio anual del verdor de la vegetación en Mexicali
+y Ensenada es distinto? ¿La afluencia de automoviles en un
+importante cruce de calles de la Ciudad de México disminuyó durante el mes de marzo
+de 2020? Estos son sólo unos ejemplos de hipótesis científicas válidas.^[Esperamos que estos ejemplos nos ayuden a transmitir una idea fundamental proveniente del sentido común: la necesidad de responder una pregunta de relevancia para tu comunidad viene primero, la estadística viene después.]
+
+#### Hipótesis (nula)
+
+Concediendo que contamos con una hipótesis científica válida el siguiente paso
+corresponde en _traducir_ esa hipótesis en una serie de relaciones matemáticas.
+Por ejemplo, tomemos la hipotética pregunta ¿existe alguna asociación entre el
+fenómeno El Niño y la sequía en México? Simplificando el ejemplo, supongamos que tenemos observaciones de precipitación e índice de sequía a lo largo de años en donde
+se conoce la presencia del fenómeno El Niño. Una medida de asociación
+entre variables es la correlación lineal entre éstas, denotemos esta correlación
+con el símbolo $\rho$. Entonces la ausencia de asociación entre precipitación
+y sequía se traduciría en $\rho=0$. La presencia de asociación entre
+estas variables estaría dictada por $\rho \neq 0$. Note que esto último
+implica que $\rho>0$ o que $\rho<0$.
+
+Continuando con el ejemplo de arriba, suponiendo que nuestro interés consiste
+en determinar que _sí_ existe asociación entre El Niño y la sequía
+entonces desearíamos _demostrar_ que la relación $\rho=0$ es falsa.^[Esta
+contraintuitiva manera de proceder tiene su base en una técnica matemática de
+demostración llamada _reducción al absurdo_. Inicialmente, esta técnica
+consiste en suponer cierto el resultado contrario al resultado que se desea probar.
+Posteriormente,
+se utilizará una serie de argumentos lógicos que derivarán en una conclusión
+falsa. Esto último permite deducir que el supuesto original es en realidad falso.]
+Este tipo de relación se denomina _hipótesis nula_ y en símbolos se representa
+como $H_0: \rho=0$.^[Algunos autores utilizan
+el término hipótesis sin la adjetivación nula, esto no debe causar confusión.]
+También arriba hicimos incapié en el caso opuesto a la ausencia de asociación
+entre las variables, es decir, $\rho\neq0$. En el clásico marco de una prueba
+de hipótesis estadística la relación de orden opuesta a aquella especificada en
+la hipótesis nula recibe el nombre de _hipótesis alternativa_. En símbolos
+escribimos $H_a: \rho\neq0$.
+
+Arriba hemos mostrado como traducir una hipótesis científica, formulada
+a partir de conocimiento acerca de un fenómeno, en un conjunto de relaciones matemáticas.
+En general, esta traducción representa el primer paso para establecer una prueba
+de hipótesis estadística. Además, la selección de una relación matemática
+(e.g. $\rho=0$) como la hipótesis nula obedece al sentido en que deseamos probar
+nuestra hipótesis científica (e.g. sí existe asociación).
+
+#### Estadístico de prueba
+
+En esta parte de nuestra discusión debemos incorporar el término _modelación_
+estadística. Esto es necesario para poder demostrar la
+hipótesis de investigación científica. Para nosotros, modelación consistirá
+en suponer que nuestros datos (observaciones) son realizaciones de procesos aleatorios
+conocidos y sencillos. Típicamente, independencia (una observación no influye en
+el resto de observaciones), media cero y homoscedasticidad (varianza común) son propiedades
+deseables en una muestra (conjunto de observaciones) debido a que simplifican
+la matemática alrededor de nuestro problema. La validez de estos supuestos está
+muchas veces inversamente relacionada con la complejidad del fenómeno bajo
+consideración; mientras más complejo sea el fenómeno es menos probable que
+estos supuestos se satisfagan.
+
+Suponiendo que los supuestos de nuestro modelo, el que sea, son válidos ahora podemos
+discutir cómo estos supuestos impactan a nuestra hipótesis nula. Retomemos el ejemplo
+de la asociación entre el fenómeno El Niño y la sequía. Previamente determinamos
+que $H_0: \rho=0$ es una manera apropiada de abordar este problema desde el punto de vista
+de una prueba de hipótesis. Observe que $\rho$ denota el coeficiente de correlación idealizado entre dos variables, es decir, $\rho$ habita en el mundo (_matemático_)
+en donde los supuestos de nuestro modelo se satisfacen. El símbolo $\rho$,
+y en general el objeto utilizado para probar la hipótesis nula,
+se denomina _estadístico de prueba_.
+En el mundo real nosotros tenemos acceso a datos de precipitación e índice de aridez,
+es decir números, a partir de los cuales podemos calcular la contraparte
+_muestral_ de $\rho$, en símbolos, $\widehat{\rho}$.
+
+El estadístico de prueba es un objeto aleatorio y como tal posee una distribución de
+probabilidad. La facilidad para determinar esta distribución en ocasiones influye en la selección del estadístico de prueba. En este curso frecuentemente encontraremos
+estadísticos de prueba con distribución de probabilidad de fácil cómputo.
+
+#### $p$-valor
+
+En esta sección usaremos la notación $T$ para referirnos al estadístico de prueba de
+una hipótesis nula general.
+
+Ahora llegamos al punto de  decidir si tomar $H_0$ como cierta o no. Para esto
+usaremos la distribución del estadístico de prueba $T$ para calcular el $p$-valor.
+Algunos autores definen el $p$-valor como la probabilidad, suponiendo que la hipótesis
+nula es verdadera, de observar un resultado al menos tan extremo como el estadístico
+de prueba.
+
+Para los propósitos de este seminario la siguiente caracterización del $p$-valor
+resulta muy útil. Supongamos que $T$ es un estadístico de prueba tal que valores grandes
+de $T$ conceden evidencia en contra de la hipótesis nula $H_0$. En este contexto,
+el $p$-valor se define como
+\[
+  p(x) = \textbf{P}\{T \geq \widehat{T}(x)\},
+\]
+donde $x$ representa valores observados (datos) y $\widehat{T}(x)$ denota la contraparte
+muestral de $T$.
+
+Observe que un valor pequeño de $p(x)$, digamos menor que $\alpha=0.05$,
+indica que es poco probable que el estadístico $T$ se encuentre por arriba
+del valor nominal $\widehat{T}(x)$.
+Es decir, el que $T$ sea mayor que $\widehat{T}(x)$, dado los datos $x$, es un evento
+_inusual_. Más aún, observe que
+iniciamos con un modelo y ahora el propio modelo, a través del $p$-valor,
+nos sugiere que los datos observados son poco probables de haber ocurrido.
+Por tanto el modelo y los datos observados digamos que no _están en correspondencia_.
+Se nos presenta una disyuntiva, o bien la hipótesis nula es correcta
+y hemos observados algo (datos) realmente sorprendente, o bien
+la hipótesis nula es incorrecta y por tanto no debimos usarla para calcular el $p$-valor.
+Suponiendo que los datos son creíbles, entonces, debemos rechazar la validez
+de la hipótesis nula $H_0$.
+<!-- % When the P-value is low enough, it says that it’s very unlikely we’d observe -->
+<!-- % data like these if our null hypothesis were true. We started with a model. Now -->
+<!-- % that model tells us that the data we have are unlikely to have happened. The -->
+<!-- % model and data are at odds with each other, so we have to make a choice. Either -->
+<!-- % the null hypothesis is correct and we’ve just seen something remarkable, or the -->
+<!-- % null hypothesis is wrong, and we were wrong to use it as the basis for computing -->
+<!-- % our P-value. Perhaps another model is correct, and the data really aren’t that remarkable -->
+<!-- % after all. If you believe in data more than in assumptions, then, given -->
+<!-- % that choice, you should reject the null hypothesis. -->
+<!-- % De modo equivalente, podemos decir que es altamente probable que -->
+<!-- % $\widehat{T}(x)$ sea grande. -->
+<!-- % Esto último nos permite rechazar -->
+<!-- % la hipótesis nula $H_0$. -->
+
+En términos generales un valor pequeño del $p$-valor provee evidencia de que
+la hipótesis bajo consideración puede no ser adecuada para explicar las observaciones
+obtenidas.
+
+### Ejemplos
+
+A continuación presentaremos varios ejemplos para familiarizarnos con los elementos
+introducidos arriba: hipótesis nula, estadístico de prueba y $p$-valor. Al final
+del día buscamos que el lector incremente su _expertise_ en el uso de pruebas
+de hipótesis.
+
+#### Moneda justa
+
+Este es un ejemplo clásico de libro de texto. Supongamos que después de jugar una
+serie de volados con una moneda tenemos la sospecha que una de las dos
+caras de la moneda aparece más frecuentemente que la otra. Esta sospecha da lugar
+a la hipótesis de si la moneda es justa.
+
+En una moneda justa, la probabilidad, $p$, de obtener una de las dos caras
+es $1/2$. Por tanto podemos proponer $H_0: p = 1/2$ como la hipótesis nula.
+Nótese que si rechazáramos esta hipótesis estaríamos tomando como cierto que
+$p\neq 1/2$ y podríamos concluir que la moneda en cuestión no es justa.
+
+Como mencionamos en el primer párrafo hemos estado lanzando la moneda un cierto
+número de veces, digamos $n$ veces. Supongamos que en $k$ de las $n$ ocasiones
+el resultado del lanzamiento arrojó un _sol_.
+Podemos suponer que el resultado de un lanzamiento no influye en el
+resultado de otro lanzamiento, es decir, existe independencia entre los ensayos.
+Usando este supuesto se conoce que la probabilidad de observar $k$
+_soles_ en $n$ lanzamientos es igual a
+\[
+  \textbf{P}\{ W = k \}
+  =
+  \frac{n!}{(n-k)!\,k!}\,p^{k}\,(1-p)^{n-k},
+\]
+donde $n! = 1 \times 2 \times \cdots (n-1) \times n$.
+El estadístico de prueba para $H_0: p=1/2$ será $W$. Podemos interpretar
+a $W$ como la suma del número de soles obtenidos en $n$ lanzamientos.
+Esta interpretación resulta conveniente debido a que en el mundo real
+podemos lanzar la moneda en cuestión, digamos 50 veces, y registrar
+cuántos soles obtuvimos en esos 50 lanzamientos.
+
+Observa que si lanzamos una moneda justa $n$ veces, es muy probable que
+en la mitad de estas veces hayamos obtenido un sol como resultado.
+Entonces, bajo la hipótesis
+nula $H_0:p=1/2$, es poco probable que $W$ tome un valor muy grande.
+Por tanto el $p$-valor asociado a esta prueba está dado por
+<!--~\label{eq.Pval.fairCoin} -->
+\begin{equation} 
+  \textbf{P}\{ W > \widehat{W}_n \} = 1 - \textbf{P}\{ W \leq \widehat{W}_n \},
+  (\#eq:PvalFairCoin)
+\end{equation}
+donde $\widehat{W}_n$ es la contraparte muestral de $W$, es decir, un número
+que depende de los datos obtenidos.
+
+En R podemos usar la función ```rbinom``` para simular lanzar
+una moneda _justa_ 50 veces. Para calcular el $p$-valor usamos la ecuación
+\@ref(eq:PvalFairCoin) que con la ayuda de la función ```pbinom``` puede
+ser codificada en ```R```. Estamos hablando de
+```{r fairCoin, echo = TRUE}
+muestra <- rbinom(n=50, size = 1, prob = 0.5)
+Wn <- sum(muestra)
+pVal <- 1 - pbinom(q = Wn, size = 50, prob = 0.5)
+```
+que arroja como resultado
+```{r fairCoin_show}
+muestra
+Wn
+pVal
+```
+Aquí $1=_sol_$ y $0=_águila_$.
+
+Nota que el ```pVal``` obtenido es mayor que el típico nivel de significancia
+$\alpha=0.05$. Por tanto, _no podemos_ rechazar la hipótesis nula al 5\% de
+significancia.
+Observa que esta debe ser la conclusión adecuada en este caso ya que en esta
+simulación en efecto la moneda es justa, es decir, $p=1/2$.
+
+Considera ahora la siguiente
+```{r unfairCoin, echo=FALSE}
+set.seed(101)
+muestra <- rbinom(n=50, size = 1, prob = 0.7)
+```
+```{r unfairCoin_show}
+muestra
+```
+¿Puedes concluir que la moneda es justa? Justifica tu respuesta.
+
+#### Prueba $t$ para medias con una muestra
+
+La prueba $t$ para medias es una prueba de hipótesis de amplio uso y la cual forma parte
+de cualquier curso básico de estadística. Para presentar esta prueba usaremos el
+siguiente ejemplo.\medskip
+
+Un grupo de investigadores realizaron pruebas químicas a 150 salmones criados en
+granjas; se midieron algunos contaminantes orgánicos.
+Las granjas pertenecían a ocho regiones de seis países.
+A partir de su muestra los investigadores encontraron
+que la concentración media del insecticida cancerígeno _mirex_ era de 0.0913 partes
+por millón (ppm) con una desviación estándar de 0.0495 ppm. Una agencia de protección
+ambiental recomienda, como medida de seguridad, 0.08 ppm como valor permitido para mirex.
+<!-- % Are farmed salmon contaminated beyond the level permitted by the EPA? -->
+***¿Está el salmón cultivado en granja contaminado más allá del nivel permitido
+por la agencia ambiental?***\medskip
+
+La pregunta anterior es una hipótesis de investigación válida a la que
+daremos respuesta utilizando una prueba $t$ para medias con una muestra.
+Para este fin debemos verificar
+que la muestra satisface los supuestos de _independencia_, _aleatorización_ y una distribución _aproximadamente normal_.^[En general, para utilizar un
+conjunto de datos en una prueba $t$ para medias uno debe verificar que estas tres
+condiciones son satisfechas.]
+
+  - ***Independencia.*** Los salmones fueron criados en muchos lugares distintos y las
+  muestras fueron obtenidas independientemente una de otra.
+  
+  - ***Aleatorización.*** Los salmones de las muestras fueron
+  seleccionados aleatoriamente de entre los salmones en venta.
+
+ - ***Aproximadamente normal.*** Los investigadores reportaron que el histograma de
+  concentración de mirex _vs._ número de salmones es unimodal aunque ligeramente
+  cargada a la derecha.
+  
+<!-- \begin{itemize} -->
+<!--   \item \textbf{Independencia.} Los salmones fueron criados en muchos lugares distintos y las -->
+<!--   muestras fueron obtenidas independientemente una de otra. -->
+
+<!--   \item \textbf{Aleatorización.} Los salmones de las muestras fueron -->
+<!--   seleccionados aleatoriamente de entre los salmones en venta. -->
+
+<!--   \item \textbf{Aproximadamente normal} Los investigadores reportaron que el histograma de -->
+<!--   concentración de mirex \emph{vs.} número de salmones es unimodal aunque ligeramente -->
+<!--   cargada a la derecha. -->
+<!-- \end{itemize} -->
+A partir de esta información, podemos usar la muestra (los datos obtenidos de los
+150 salmones) para realizar una prueba $t$ para medias.\medskip
+
+La hipótesis nula en este caso es $H_0: \mu \leq 0.08$ y la alternativa
+$H_a: \mu > 0.08$. Si a primera vista la interpretación de la pregunta de interés
+en forma de estas hipótesis _estadísticas_ te parece arbitrara, regresa a leer
+la pregunta de interés. Y ahora, ¿te parecen adecuadas $H_0$ y $H_a$?\medskip
+
+<!-- ~\label{eq.t.Test} -->
+El estadístico de esta prueba está dado por
+\begin{equation}
+  t_{n-1} = \frac{ \bar{X} - \mu }{ S / \sqrt{n} },
+  (\#eq:tTest)
+\end{equation}
+donde $\bar{X}$ es la media muestral y $S$ la desviación estándar. Suponiendo que las
+condiciones de arriba se satisfacen (en el _mundo matemático_), entonces se puede
+demostrar que el símbolo $t_{n-1}$ representa un objeto aleatorio con una distribución llamada $t$-Student con $n-1$ grados de libertad.
+
+```{r tdist, fig.width=5, fig.height=5, fig.cap = "Densidades de t-Student", fig.pos="h", out.width='.6\\linewidth', echo=FALSE}
+x <- seq(-5, 5, by = 0.1)
+y <- dnorm(x = x, mean = 0, sd = 1)
+z <- dt(x = x, df = 1)
+w <- dt(x = x, df = 2)
+u <- dt(x = x, df = 5)
+
+yRan <- range(y, z, w, u)
+xRan <- range(x)
+
+plot(x, y, type = "l", col = "red", lwd = 3,
+     ylab = "", xlab = "", main = "", ylim = yRan,
+     xlim = xRan, cex.main = 0.8)
+lines(x, z, type = "l", col = "green", lwd = 3)
+lines(x, w, col = "darkgreen", lwd = 3)
+lines(x, u, col = "darkolivegreen4", lwd = 3)
+legend("topright", col = c("red", "green", "darkgreen", "darkolivegreen4"),
+       legend = c("N(0,1)", "t_1", "t_2", "t_5"), lty = rep(1, 4),
+       lwd = rep(3, 3))
+```
+
+La Figura \@ref(fig:tdist) muestra la densidad $t$-Student con diferentes grados de
+libertad. En cierto sentido cuando hablamos de _la $t$-Student_ en realidad estamos
+hablando de una familia de distribuciones y cada elemento de la familia cambia su apariencia en función del valor de sus grados de libertad.
+Podemos observar que el pico de estas densidades cambia en función de los grados de
+libertad; el pico es alto para valores grandes mienstras que el pico es más bajo
+cuando los grados de libertad son pequeños.
+En comparación con la normal estándar las _colas_ de las $t$-Student son más
+_gordas_. La simetría aparente en las $t$-Student nos permite aseverar que valores
+grandes del estadístico $t_{n-1}$ proveen evidencia en contra de $H_0$. Por lo tanto,
+el $p$-valor asociado a esta prueba está dado por
+<!-- ~\label{eq.Pval.oneSample.t.test} -->
+\begin{equation}
+  \textbf{P}\{ t_{n-1} > \widehat{t}_{n-1} \}.
+  (\#eq:PvalOneSampletTest)
+\end{equation}
+Recuerda que $\widehat{t}_{n-1}$ es la contraparte muestral de $t_{n-1}$.
+
+En ```RStudio```, con los datos provistos arriba, esta prueba $t$ para medias con una
+muestra se hace así:
+```{r tdist_test}
+xBar <- 0.0913
+s <- 0.0495
+n <- 150
+mu <- 0.08
+t <- (xBar - mu)/(s/sqrt(n))
+
+pVal <- 1 - pt(q = t, df = n-1)
+pVal
+```
+
+Dado que este $p$-valor es tan bajo, podemos rechazar la hipótesis
+nula (incluso al $\alpha=0.003$) y concluir que en salmones criados en granja
+el nivel de contaminación por mirex excede el nivel marcado por una agencia
+ambiental.
+
+#### Los tres chiflados
+
+Desde 1922 hasta 1970, ya sé, historia antigua, _Los Tres Chiflados_ fue un grupo
+de comedia activo y, hasta cierto punto, exitoso. Su comedia era blanca, física y sencilla,
+sobre simplificando su acto podemos decir que desarrollaban el tipo de comedia que gana risas a partir del clásico pastelazo.
+En (https://www.youtube.com/watch?v=aGHkIqQGtXA)[YouTube] es posible encontrar
+algunas de sus películas.
+
+A lo largo de sus muchos años de carrera fueron 6 actores quienes dieron vida a Los Tres
+Chiflados. Las tercias conocidas fueron
+  
+  - Moe Howard, Larry Fine, Curly Howard (97 films)
+  
+  - Moe Howard, Larry Fine, Shemp Howard (77 films)
+  
+  - Moe Howard, Larry Fine, Joe Besser (16 films)
+  
+  - Moe Howard, Larry Fine, Curly-Joe DeRita (?)
+
+<!-- \begin{enumerate} -->
+<!-- % \scriptsize -->
+<!--   \item Moe Howard, Larry Fine, {Curly Howard} (97 films) -->
+
+<!--   \item Moe Howard, Larry Fine, {Shemp Howard} (77 films) -->
+
+<!--   \item Moe Howard, Larry Fine, {Joe Besser} (16 films) -->
+
+<!--   \item Moe Howard, Larry Fine, {Curly-Joe DeRita} (?) -->
+<!-- \end{enumerate} -->
+Moe Howard es visto como el jefe de los chiflados; frecuentemente lo veremos dando zapes,
+piquetes de ojo, etc. a sus demás compañeros.
+
+##### Los films con Joe Besser son los menos dinámicos
+
+Entre los seguidores de Los Tres Chiflados está presente la idea que los
+episodios con Joe Besser tienen la particularidad de ser los menos
+dinámicos, es decir donde menos comedia física (golpes y así) veremos. Esta creencia
+puede tener sustento en el hecho de que el contrato laboral de Besser especificaba
+que él no sería objeto de cachetadas o daño corporal. En una entrevista el propio
+Besser reconoce la grandeza de espíritu de su compañero Larry Fine ya que éste
+último estaba dispuesto a recibir los golpes que originalmente fueron pensados para el
+personaje de Besser.
+
+Para probar estadísticamente la idea sobre la poca dinámica en los episodios
+de Besser usaremos el _número de actos violentos_ en algunos films de la tercia
+Moe-Larry-Shemp y toda la filmografía de la tercia Moe-Larry-Joe.
+Los datos se muestran en la Tabla~\@ref(fig.Chiflados).^[Agradecemos de antemano
+a las personas que hicieron el arduo trabajo de adquirir los films originales, mirarlos y contar el número de actos violentos por film.]
+
+Este problema puede ser resuelto con una prueba $t$ para medias con una muestra.
+En efecto, una hipótesis de trabajo es que el promedio
+de actos violentos de Moe contra Shemp no es mayor que el promedio
+de actos violentes de Moe contra Joe. Es decir, $H_0: \mu \leq 2.9375$ (mira el penúltimo
+renglón de la Tabla~\@ref(fig.Chiflados)), mientras que $H_a : \mu > 2.9375$.
+Suponiendo que se satisfacen las condiciones de independencia, aleatorización y
+de normalidad aproximada podemos usar las ecuaciones \@ref(eq:tTest) y \@ref(eq:PvalOneSampletTest). Como el $p$-valor de esta prueba es tan bajo (0.0029) que podemos concluir que Moe Howard realizó más actos violentos contra Shemp Howard
+que contra Joe Besser.
+
+¿Y qué hay de los actos violentos de Moe Howard contra Curly Howard en relación
+a los actos violentos de Moe Howard contra Joe Besser?
+¿Puedes concluir que el promedio de actos violentos de Moe contra Curly no es mayor
+que el promedio de actos violentos de Moe contra Joe?
+
+```{r besser}
+x1 <- 10.3
+s1 <- 6.2191
+n <- 10
+mu <- 2.9375
+t <- (x1 - mu)/(s1/sqrt(n))
+
+pVal <- 1 - pt(q = t, df = n-1)
+pVal
+```
+
+\begin{table}[ht]
+\caption{Número de actos violentos (\#AV) de Moe contra sus compañeros
+por episodio.}~\label{fig.Chiflados}
+ \centering
+  \scalebox{.65}{
+ \begin{tabular}{c c c c c c} %>{\columncolor[gray]{0.8}}c|c|c|c|c|c}
+ \toprule[1.25pt]
+ Shemp & & Curly & & Besser\\
+ Título (\# del Episodio) & \#AV &
+ Título (\# del Episodio) & \#AV &
+ Título (\# del Episodio) & \#AV\\
+ \hline
+ Shivering Sherlocks (104) & 13 &
+ Uncivil Warriors (8) & 27 &
+ Hoofs and Goofs (175) & 1\\
+ Punchy Cowpunchers (120) & 3 &
+ Whoops, I'm an Indian (18) & 13 &
+ Muscle Up a Little Closer (176) & 2\\
+
+ Love at First Bite (123) & 20 &
+ Back to the Woods (23) & 12 &
+ A Merry Mix Up (177) & 1\\
+
+ Three Arabian Nuts (129) & 9 &
+ Three Missing Links (34) & 9 &
+ Space Ship Sappy (178) & 3\\
+
+ Scrambled Brains (132) & 11 &
+ How High is Up? (48) & 38 &
+ Guns a Poppin! (179) & 2\\
+
+ Corny Casanovas (139) & 17 &
+ Cookoo Cavaliers (51) & 14 &
+ Horsing Around (180) & 1\\
+
+ Cuckoo on a Choo Choo (143) & 16 &
+ An Ache in Every Stake (57) & 6 &
+ Rusty Romeos (181) & 3\\
+
+ Knutzy Knights (156) & 8 &
+ Sock-a-Bye Baby (66) & 10 &
+ Outer Space Jitters (182) & 1\\
+
+ Shot in the Fronties (157) & 2 &
+ A Bird in the Head (89) & 11 &
+ Quiz Whizz (183) & 4\\
+
+ Husbands Beware (1670 & 4 &
+ Uncivil Wardbirds (90) & 3 &
+ Fifi Blows Her Top (184) & 3\\
+
+ &&&&
+ Pies and Guys (185) & 8\\
+
+ &&&&
+ Sweet and Hot (186) & 0\\
+
+ &&&&
+ Flying Saucer Daffy (187) & 8\\
+
+ &&&&
+ Oil's Well That Ends Well (188) & 4\\
+
+ &&&&
+ Tripple Crossed (189) & 2\\
+
+ &&&&
+ Sappy Bull Fighters (190) & 4\\
+
+ \hline
+ Promedio $\bar{x}_1$ & 10.3 &
+ Promedio $\bar{x}_2$ & 14.3 &
+ Promedio & 2.9375\\
+ Dev.~est.~$s_1$ & 6.2191 & Dev.~est.~$s_2$ & 10.4568\\
+\bottomrule[1.25pt]
+ \end{tabular}}
+  % \vspace{0.25cm}
+\end{table}
+
+#### Prueba $t$ para medias con dos muestras
+
+Esta prueba de hipótesis es otra herramienta clásica. Para presentarla vamos
+a utilizar los datos del número de actos violentos en los films de Los Tres
+Chiflados.
+
+Algunos seguidores de los chiflados sostienen que el número promedio
+de actos violentos de Moe contra Curly por film es igual al número promedio
+de actos violentos de Moe contra Shemp. Esta es nuestra hipótesis de
+investigación.
+
+Empecemos por traducir esta hipótesis a su contraparte estadística.
+Detrás de este tipo de prueba de hipótesis está el supuesto
+que el promedio del número de actos violentos en un grupo es la realización
+de una normal con media $\mu_1$ y varianza $\sigma_1^2$ mientras que el promedio
+del número de actos violentos en el otro grupo es una realización
+de una normal con media $\mu_2$ y varianza $\sigma_2^2$.
+
+Así la hipótesis nula de este ejercicio es $H_0: \mu_1 = \mu_2$. Observa
+que equivalentemente podemos escribir $H_0: \mu_1 - \mu_2 = 0$.
+¿Recuerdas las tres condiciones que se deben satisfacer para aplicar la prueba $t$
+para una muestra? Además de esas condiciones, para la actual prueba de hipótesis
+debemos verificar una más:
+
+  - ***Independencia entre grupos.*** Para usar esta prueba (y su estadístico)
+  los dos grupos que estamos comparando deben ser independientes uno del otro.
+  No existe un resultado matemático para verificar este supuesto.
+  En lugar de eso debemos pensar en la manera en la que las muestras fueron
+  obtenidas.
+
+<!-- \begin{itemize} -->
+<!--   \item \textbf{Independencia entre grupos.} Para usar esta prueba (y su estadístico) -->
+<!--   los dos grupos que estamos comparando deben ser independientes uno del otro. -->
+<!--   No existe un resultado matemático para verificar este supuesto. -->
+<!--   En lugar de eso debemos pensar en la manera en la que las muestras fueron -->
+<!--   obtenidas. -->
+<!-- \end{itemize} -->
+En el caso de Los Tres Chiflados, el número de actos violentos fueron registrados
+en films hechos en distintos años y con diferentes guiones así que podemos
+suponer que estos grupos son independientes.
+
+El estadístico de prueba para igualdad de medias con dos muestras
+está dado por
+<!-- ~\label{eq.twoSample.t.Test} -->
+\begin{equation}
+  t_{df} = \frac{ \bar{X}_{1} - \bar{X}_{2} }{\sqrt{ S_1^2/n + S_2^2/n }},
+  (\#eq:twoSampletTest)
+\end{equation}
+el cual tiene una distribución $t$-student con $df$ grados de libertad:
+\[
+ df = \frac{ \left( S_1^2/n_1 + S_2^2/n_2 \right)^2 }
+ { \left( \frac{1}{n_1-1} \right)\left( S_1^2/n_1 \right)
+ +
+   \left( \frac{1}{n_2-1} \right)\left( S_2^2/n_2 \right)}.
+\]
+La similitud entre \@ref(eq:tTest) y \@ref(eq:twoSampletTest) no es casualidad.
+El estadístico $t_{df}$ incorpora las medias muestrales ($\bar{X}_1$ y $\bar{X}_2$)
+así como las desviaciones estándar ($S_1$ y $S_2$) y permite que el tamaño
+de cada muestra sea diferente ($n_1$ puede ser distinto a $n_2$). Así,
+de cierto modo, el estadístico $t_{df}$ es una generalización de
+$t_{n-1}$.
+
+Debido a la simetría de la distribución $t$-Student, valores grandes de
+$|\bar{X}_1-\bar{X}_2|$ proveerán evidencia en contra de $H_0$. Por esta razón
+el $p$-valor de esta prueba es igual a:
+\begin{align*}
+  \textbf{P}\{ |t_{df}| > |\widehat{t}_{df}| \}
+  &=
+  1 - \textbf{P}\{ |t_{df}| \leq |\widehat{t}_{df}| \}
+  =
+  1 - \textbf{P}\{ -|\widehat{t}_{df}| \leq  t_{df} \leq |\widehat{t}_{df}| \}\\
+  &=
+  1 - \textbf{P}\{t_{df} \leq |\widehat{t}_{df}| \} +
+  \textbf{P}\{ t_{df} \leq - |\widehat{t}_{df}| \}\\
+  &=
+  \textbf{P}\{ t_{df} > |\widehat{t}_{df}| \} +
+  \textbf{P}\{ t_{df} \leq -|\widehat{t}_{df}| \}
+  =
+  2\textbf{P}\{ t_{df} > |\widehat{t}_{df}| \}
+\end{align*}
+Para obtener esta probabilidad hemos usado primero algunos resultados básicos
+de teoría de probabilidades y en el último paso usamos la simetría de la
+densidad $t$-Student.
+
+Finalmente, en ```RStudio```, obtenemos un $p$-valor de $0.315$ con lo
+cual no podemos rechazar la hipótesis nula. Concluimos que los datos recolectados
+no muestran diferencia significativa entre las medias de cada población (el número
+de actos violentos en cada tercia).
+Observe que no se está diciendo que el promedio de actos violentos
+de Moe contra Curly sea igual al promedio de actos violentos
+de Moe contra Shemp; _detalles semánticos de la estadística_.
+
+```{r curly_shemp}
+x1 <- 10.3
+x2 <- 14.3
+s1 <- 6.2191
+s2 <- 10.4568
+n1 <- 10
+n2 <- 10
+
+nu <- ( s1^2/n1 + s2^2/n2 )^2 / ( (s1^2/n1)^2/(n1-1) + (s2^2/n2)^2/(n2-1) )
+
+t <- (x1 - x2) / sqrt( s1^2/n1 + s2^2/n2  )
+
+pVal <- 2 * (1-pt(q = abs(t), df = nu))
+pVal
+```
+
+Hasta aquí concluimos con los ejemplos sobre pruebas de hipótesis. Hemos visto cómo
+plantear una pregunta de investigación en términos estadísticos.
+También aprendimos que dependiendo del problema bajo consideración hemos de emplear
+diferentes estadísticos de prueba. Si bien el cálculo del $p$-valor cambia
+dependiendo de la hipótesis nula, su interpretación es _universal_,
+un $p$-valor muy pequeño provee evidencia en contra de la hipótesis nula.
+

@@ -1,0 +1,80 @@
+---
+title: "Métodos Estadísticos para Percepción Remota con R"
+author: "Inder Tecuapetla"
+# documentclass: krantz
+bibliography: [classNotesBib.bib]
+biblio-style: apalike
+link-citations: yes
+colorlinks: yes
+graphics: yes
+lot: yes
+lof: yes
+urlcolor: blue
+# header-style:
+#   - usepackage{amsmath, mathrsfs}
+output: 
+  bookdown::gitbook: 
+    split_by: section
+site: bookdown::bookdown_site
+description: "This is more than a test"
+---
+
+```{r setup, include=FALSE}
+library(rgdal)
+library(raster)
+library(sp)
+library(sf)
+library(mapview)
+library(geoTS)
+
+library(fpp)
+library(forecast)
+library(Kendall)
+library(trend)
+library(RColorBrewer)
+library(gtools)
+
+knitr::opts_chunk$set(echo = TRUE)
+
+getMA <- function(y, h, weight){# y must be ts object
+  out <- y
+  out[c(1:h,(length(y)-h+1):length(y))] <- NA
+  out[(1+h):(length(y)-h)] <- sapply( (1+h):(length(y)-h), 
+                                      function(s) sum(y[(s-h):(s+h)])/weight )
+out
+}
+
+library(sta)
+library(changepoint)
+library(bfast)
+
+source(paste0(getwd(),"/Rscripts/funciones_auxiliares.R"))
+```
+
+\newcommand{\msf}[1]{\mathsf{#1}}
+\newcommand{\mb}[1]{\mathbb{#1}}
+\newcommand{\bs}[1]{\boldsymbol{#1}}
+
+\newcommand{\VAR}{\msf{VAR}}
+\newcommand{\R}{\mb{R}}
+
+\newcommand{\argMin}{\msf{argmin}}
+
+
+# Prefacio {-}
+
+... cuando estemos cerca de finalizar esta obra escribiremos esta entrada.
+
+\newpage
+
+## Estuctura del libro {-}
+
+## Agradecimientos {-}
+
+```{block2, type='flushright', html.tag='p'}
+Inder Tecuapetla 
+
+La Magdalena Contreras, CDMX
+```
+
+

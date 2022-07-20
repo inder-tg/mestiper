@@ -1,0 +1,8 @@
+
+# (PART\*) PARTE II: MÉTODOS {-}
+
+<!-- # Análisis de series de tiempo de imágenes satelitales -->
+
+# Missing data {#missingData}
+
+
