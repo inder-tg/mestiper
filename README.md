@@ -19,7 +19,7 @@ Para tener una copia de las notas localmente
   1. Dirígete a [mestiper](https://github.com/inder-tg/mestiper)
   2. Oprime el botón verde **Clone** y **Download ZIP**
   3. En tu sistema, _unzip_ el archivo, y guardalo en algún directorio conveniente
-  4. Doble click sobre el archivo .Rproj
+  4. Doble click sobre el archivo .Rproj (abrirá el proyecto en RStudio)
   5. Instala el paquete ```bookdown```
    
     install.packages("bookdown")
