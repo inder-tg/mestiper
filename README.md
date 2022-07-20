@@ -16,7 +16,7 @@ hay algunas secciones sin contenido.
 
 Para tener una copia de las notas localmente 
 
-  1. Dirígete a (mestiper)[https://github.com/inder-tg/mestiper]
+  1. Dirígete a [mestiper](https://github.com/inder-tg/mestiper)
   2. Oprime el botón verde **clone or download** y **download zip**
   3. En tu sistema, _unzip_ el archivo, y guardalo en algún directorio conveniente
   4. Doble click sobre el archivo .Rproj
