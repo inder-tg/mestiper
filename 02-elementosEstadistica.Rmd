@@ -29,7 +29,7 @@ Por ejemplo, considera los números de la siguiente imagen y elige un número _a
 
 Resulta que el 75% de la gente selecciona el 3, cerca del 20% elige el 2 o el 4.
 Si has seleccionado el 1, entonces perteneces a un grupo selecto ya que únicamente
-el 5% opta por este número. La psicología tiene hipótesis para explicar este fenómeno,
+el 5% opta por este número. La psicología tiene una hipótesis para explicar este fenómeno,
 en esta sección este ejemplo nos permite reflexionar sobre las estructuras inherentes
 a los procesos azarosos y cómo podemos usarlas a nuestro favor. Continuemos con
 otro ejemplo.
@@ -91,9 +91,9 @@ legend("topright", legend = c(paste0("Mediana: ", median(outcome))), bty="n")
 ```
 
 El código de arriba permite simular 1000 ensayos de nuestro experimento. Basado
-en este estudio de simulación concluimos que quien tenga interés en completar
-una colección de las tarjetas de cereales _Buendía_ necesitará comprar una mediana
-de 6 cajas -pero puede necesitar comprar más.
+en este estudio de simulación concluimos que se esperaría comprar hasta 6 cajas[Este número se basa en
+la mediana de la distribución de resultados del estudio de simulación.]
+de cereal para completar una colección de las tarjetas de cereales _Buendía_.
 
 ## Ley de Grandes Números
 
@@ -135,7 +135,7 @@ los Grandes Números**:
 </div>
 
   Esta ley da lugar a la interpretación frecuentista de la probabilidad de un 
-  evento. Denotemos con la letra $\tetxbf{A}$ cualquier evento de interés, entonces
+  evento. Denotemos con la letra $\textbf{A}$ cualquier evento de interés, entonces
   \[
     \mbox{P}\{ A \} 
     = 
@@ -246,16 +246,17 @@ Límite Central**
 
 La historia hasta ahora. En el capítulo anterior aprendimos la importancia del
 teorema de límite central o ¿porqué solemos calcular el promedio aritmético (media)
-a muchas de las bases de datos que llegan a nuestras manos? La respuesta radica 
-en el hecho que cuando el tamaño de la muestra aumenta entonces la
-distribución de probabilidades del promedio aritmético se aproxima a la mundialmente
-famosa _curva de Gauss_. Esta curva de Gauss es propiamente, en el mundo matemático,
+a muchas de las bases de datos que llegan a nuestras manos? Como hemos visto,
+una plausible respuesta radica en el hecho que conforme nuestra muestra incrementa
+su tamaño, la distribución del promedio aritmético de los elementos de la muestra
+se aproxima cada vez más a la forma de la mundialmente famosa _curva de Gauss_. 
+Esta curva de Gauss es propiamente, en el mundo matemático,
 conocida como la densidad de una normal estándar. Y calcular probabilidades utilizando
 una normal estándar es muy sencillo, ¿cierto?
 
 Recordemos que usamos el símbolo $f(z)$ para referirnos a la función de densidad
 de la normal estándar ($Z$). Los símbolos $\textbf{P}\{ Z \leq q_z \}$ se leen
-como _la probabilidad que la normal estándar sea menor que_ $q_z$. Matemáticamente
+como _la probabilidad que la normal estándar sea menor que_ $q_z$. Matemáticamente,
 esto equivale a calcular el área definida por la gráfica 
 $\{ (z, f(z)) \mbox{ para todo } z \leq q_z \}$. Por ejemplo, supongamos que $q_z = -1.644854$
 entonces, visualmente, $\textbf{P}\{Z \leq q_z\}$ es igual a
@@ -317,8 +318,8 @@ del teorema del límite central para comprender la aleatoriedad de este nuevo ju
 En efecto, podemos suponer que el color de la carta extraida por una persona
 es _independiente_ al color de la carta extraida por cualquier otra persona.
 En símbolos, si $X_i$ representa el resultado de un modelo
-$\mathbf{Ber}(p)$ efectuado por la $i$-\'esima persona, entonces
-$X_1+X_2+\cdots+X_i$ representa el n\'umero de cartas rojas extraidas por las
+$\mathbf{Ber}(p)$ efectuado por la $i$-ésima persona, entonces
+$X_1+X_2+\cdots+X_i$ representa el número de cartas rojas extraidas por las
 $i$ personas que hasta ese momento han sacado una carta del mazo.
 Además, es conocido que el valor esperado y la varianza del modelo $\mathbf{Ber}(p)$ 
 son $\mu=p$ y $\sigma^2=p(1-p)$, respectivamente. Aunque $n=25$ está muy
@@ -453,8 +454,8 @@ no tenemos razones para rechazar/descartar la hipótesis. Nota, sin embargo, que
 otras hipótesis, similares a la seleccionada, pueden estar en línea con los datos
 registrados, por tanto con un $p$-valor alto _no hemos probado que la
 hipótesis es verdadera_. Lo que sí podemos aseverar es que la hipótesis
-no parece falsa. Formalmente, **fallamos en rechazar** la hipótesis. Sí,
-es una aseveración débil pero es lo que hay.
+no parece falsa. Formalmente, **fallamos en rechazar** la hipótesis. En efecto,
+parece una aseveración débil pero es lo que hay (y no es falso).
 
 Cuando el $p$-valor es suficientemente _bajo_, entonces estamos en presencia
 de datos que son poco probables de observarse _si_ la hipótesis de trabajo
@@ -464,8 +465,9 @@ existe una discrepancia entre el modelo y los datos, por tanto debemos tomar
 una decisión. Ya sea que la hipótesis es correcta y hemos observado datos
 extraordinarios o bien, la hipótesis es incorrecta y de modo inadecuado la hemos
 usado para derivar el $p$-valor. Quizás otro modelo sea correcto y los datos en
-realidad no son tan extraordinarios como aparentan. Si ustedes creen en datos más
-que en supuestos, entonces, dada esa opcián, deberían rechazar la hipótesis.
+realidad no son tan extraordinarios como aparentan. En el caso de tener mucha
+confianza en que los datos obtenidos son correctos, entonces un $p$-valor
+bajo nos sugiere rechazar la hipótesis planteada.
 
 Retomando el ejemplo de las cartas, ¿qué pensarías si como resultado de nuestro juego obtenemos 19 cartas rojas? A la luz de los párrafos anteriores
 ahora podemos responder haciendo uso del p-valor correspondiente. La pregunta puede
@@ -598,7 +600,7 @@ iniciamos con un modelo y ahora el propio modelo, a través del $p$-valor,
 nos sugiere que los datos observados son poco probables de haber ocurrido.
 Por tanto el modelo y los datos observados digamos que no _están en correspondencia_.
 Se nos presenta una disyuntiva, o bien la hipótesis nula es correcta
-y hemos observados algo (datos) realmente sorprendente, o bien
+y hemos observado algo (datos) realmente sorprendente, o bien
 la hipótesis nula es incorrecta y por tanto no debimos usarla para calcular el $p$-valor.
 Suponiendo que los datos son creíbles, entonces, debemos rechazar la validez
 de la hipótesis nula $H_0$.
@@ -828,7 +830,7 @@ ambiental.
 Desde 1922 hasta 1970, ya sé, historia antigua, _Los Tres Chiflados_ fue un grupo
 de comedia activo y, hasta cierto punto, exitoso. Su comedia era blanca, física y sencilla,
 sobre simplificando su acto podemos decir que desarrollaban el tipo de comedia que gana risas a partir del clásico pastelazo.
-En (https://www.youtube.com/watch?v=aGHkIqQGtXA)[YouTube] es posible encontrar
+En [YouTube](https://www.youtube.com/watch?v=aGHkIqQGtXA) es posible encontrar
 algunas de sus películas.
 
 A lo largo de sus muchos años de carrera fueron 6 actores quienes dieron vida a Los Tres
