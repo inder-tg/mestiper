@@ -27,11 +27,11 @@ almacenar cualquier tipo de objeto.
 Para definir un objeto en R sólo debemos utilizar un nombre informativo y _asignar_
 a este nombre el dato de interés. La asignación se realiza mediante el uso de los 
 símbolos ```<-```. Por ejemplo, en las siguientes líneas definimos los objetos 
-```primeros_6_meses``` y ```numero_par_menor12```:
+```primeros_6_meses``` y ```numero_par_menor_igual_12```:
 
 ```{r}
 primeros_6_meses <- c("Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio")
-numero_par_menor12 <- c(2,4,6,8,10,12)
+numero_par_menor_igual_12 <- c(2,4,6,8,10,12)
 ```
 
 Arriba hemos usado el símbolo ```c()```, el cual abre la puerta para discutir
@@ -62,7 +62,7 @@ vector.^[El símbolo ```;``` permite ejecutar varias instrucciones en una sola l
 
 ```{r}
 class(primeros_6_meses); length(primeros_6_meses); str(primeros_6_meses)
-str(numero_par_menor12)
+str(numero_par_menor_igual_12)
 ```
 
 A continuación combinaremos las funciones ```getwd()```, ```paste0()``` y ```read.csv()``` 
@@ -117,10 +117,10 @@ ensenada[ensenada$Tprom > 20,]
 ```
 
 R fue concebido como un software estadístico y por tanto cuenta con múltiples funciones
-y _paquetes_ destinados al análisis estadístico de la información. Por ejemplo, 
+y _paquetes_ destinados al análisis estadístico de datos. Por ejemplo, 
 al calcular la correlación lineal entre las variables ```dias``` y ```P```, descubrimos 
 que ésta es alta (~0.88) lo que nos dá pie a ajustar una regresión lineal entre estas
-variables. Finalmente graficamos nuestros hallazgos. Acá el código
+variables. Finalmente graficamos nuestros hallazgos. Acá el código:
 
 ```{r}
 (COR <- cor(ensenada$dias, ensenada$P))
@@ -149,7 +149,7 @@ de tipo ```list```; ésta es quizás la principal virtud de este tipo de objetos
 En efecto,
 
 ```{r}
-LISTA <- list(primeros_6_meses, numero_par_menor12, ensenada, fit)
+LISTA <- list(primeros_6_meses, numero_par_menor_igual_12, ensenada, fit)
 ```
 Nota que R distingue entre minúsculas y mayúsculas, es decir si ahora desearas 
 utilizar el objeto ```lista``` seguramente recibirías el mensaje ```Error: object 'lista' not found.```
@@ -167,15 +167,15 @@ save(LISTA, file = paste0( getwd(), "/data/salida-cursoCortoR.RData" ))
 
 ## Un curso esencial de Percepción Remota con R {#crashCoursePR}
 
-Antes de iniciar nuestra breve discusión sobre percepción remota dejemos nuestros sistemas listos para manejar información _geo-referenciada_. Es decir, instalemos los _paquetes_ de R que serán usados en este proyecto. Un paquete de R es una serie de funciones escritas con la intención de resolver múltiples problemas asociados a un tema en específico y que han sido empaquetadas para su fácil distribución y uso.
+Antes de iniciar nuestra breve discusión sobre percepción remota dejemos nuestros sistemas listos para manejar información _geo-referenciada_. Es decir, instalemos los _paquetes_ de R que serán usados en este proyecto. Un paquete de R es una serie de funciones escritas con la intención de resolver múltiples problemas asociados a un tema específico y que han sido empaquetadas para su fácil distribución y uso.
 
-Hay decenas de paquetes para el manejo y análisis de información geo-referenciada con R, nosotros haremos uso de los siguientes:
+Hay decenas de miles de paquetes para el manejo y análisis de información geo-referenciada con R, nosotros haremos uso de los siguientes:
 
   - ```rgdal```, ```raster```, ```RColorBrewer```, ```sp```, ```sf```, ```mapview```, ```geoTS```, ```terra```
 
 Para instalar un paquete de R en RStudio podemos utilizar la opción _Install_ 
 del menú _Packages_ y teclear el nombre del paquete en el cuadro de diálogo que 
-se despliega. Alternativamente, podemos utilizar la función ```install.packages()``` 
+se muestra. Alternativamente, podemos utilizar la función ```install.packages()``` 
 en consola. Recuerda que una vez instalado hay que habilitar el paquete para su 
 uso en la sesión de trabajo utilizando la función ```library()```. Ahora sí, a 
 la ¡percepción remota!
@@ -192,7 +192,7 @@ de alguna especie animal a través de la técnica de foto trampeo; se puede medi
 las reservas de agua en cuencas hidrológicas con imágenes satelitales, etc.
 <!-- (número de ejemplares de alguna especie animal, número de accidentes vehiculares en la intersección de dos avenidas con alto tráfico, reserva de agua en cuencas hidrológicas, etc.)  (fototrampeo, video cámaras, imagen satelital, etc.). -->
 
-Las ideas que discutiremos a continuación son aplicables a cualquier acervo de 
+Las ideas que discutiremos a continuación son aplicables a muchos acervos de 
 información _geo-referenciada_, sin embargo, utilizaremos imágenes MODIS y Landsat 
 -acervos de acceso gratuito y de amplio uso- para ejemplificar algunos conceptos.    
 
@@ -220,8 +220,7 @@ dir_imagen_modis <- list.files( path=paste0(getwd(), "/data/imagenMODIS"),
 ```
 
 Creando un objeto como ```dir_imagen_modis``` podemos, por ejemplo, estar seguros 
-que no incurriremos en un error tipográfico que nos impida acceder al archivo, 
-o archivos, deseado.
+que no incurriremos en un error tipográfico que nos impida acceder a el(los) archivo(s), deseado(s).
 
 <!-- Con un objeto como ```dir_imagen_modis``` estamos creando de modo eficiente un  -->
 <!-- puente confiable para acceder a los archivos .tif de interés; por ejemplo, podemos  -->
@@ -259,7 +258,7 @@ geo referenciar la imagen (```crs```) así como sus valores máximos y mínimos 
 Conocemos también el nombre del archivo .tif (```source```) el cual nos revela 
 información sobre el producto adquirido ([MOD13A2](https://lpdaac.usgs.gov/products/mod13a2v006/)), 
 el día juliano de la adquisición de la imagen (```A2020001```), el identificador 
-del mosaico ó _tile_^[Ver [Sinusiodal Tile Grid](https://modis-land.gsfc.nasa.gov/MODLAND_grid.html).] 
+del mosaico ó _tile_^[Ver [Sinusoidal Tile Grid](https://modis-land.gsfc.nasa.gov/MODLAND_grid.html).] 
 asignado al área geográfica registrada por la imagen (```h08v06```), la versión 
 del producto (```006```), el día juliano del procesamiento de la imagen (```2020018001221```), 
 la resolución espacial y temporal del producto (```1_km_16_days```) y, en este caso, 
@@ -279,7 +278,7 @@ fue puesto en órbita en julio de 1972^[Fun fact: Una imagen Landsat 1 es parte 
 y desde entonces NASA y sus aliados han puesto en órbita 9 satélites que permiten 
 monitorear la Tierra con imágenes de resolución moderada (30 m); la misión 
 [Landsat 9](https://landsat.gsfc.nasa.gov/satellites/landsat-9/) fue lanzada 
-exitósamente en septiembre de 2021 y se espera que para mediados de febrero de 
+exitósamente en septiembre de 2021 y desde mediados de febrero de 
 2022 las imágenes provenientes de este sensor estén disponibles al público.
 
 En el directorio ```/data/escenaLandsat8``` tenemos copia de una _escena_ registrada 
@@ -298,8 +297,8 @@ Esta escena está conformada por 11 archivos. Cada archivo registra los valores 
 la reflectancia de la superficie en una rango específico, también denominado _banda espectral_.
 Pero, ¿qué es una banda espectral, Rick? Hasta ahora hemos mencionado que los 
 sensores sirven para monitorear la Tierra. Siendo más precisos debemos decir que 
-los sensores ópticos registran la radiación solar reflejada por la Tierra. De acuerdo 
-a la teoría ondulatoria de la radiación electromagnética, ésta se transmite de 
+los sensores ópticos registran la radiación solar reflejada por la superficie terrestre. 
+De acuerdo a la teoría ondulatoria de la radiación electromagnética, ésta se transmite de 
 un punto a otro de un modo **contínuo** y **periódico**. 
 
 <div class="centered">
