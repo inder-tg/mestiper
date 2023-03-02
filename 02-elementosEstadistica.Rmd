@@ -247,7 +247,7 @@ Límite Central**
 La historia hasta ahora. En el capítulo anterior aprendimos la importancia del
 teorema de límite central o ¿porqué solemos calcular el promedio aritmético (media)
 a muchas de las bases de datos que llegan a nuestras manos? Como hemos visto,
-una plausible respuesta radica en el hecho que conforme nuestra muestra incrementa
+una respuesta plausible radica en el hecho que conforme la muestra incrementa
 su tamaño, la distribución del promedio aritmético de los elementos de la muestra
 se aproxima cada vez más a la forma de la mundialmente famosa _curva de Gauss_. 
 Esta curva de Gauss es propiamente, en el mundo matemático,
