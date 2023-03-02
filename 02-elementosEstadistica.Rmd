@@ -257,7 +257,7 @@ una normal estándar es muy sencillo, ¿cierto?
 
 Recordemos que usamos el símbolo $f(z)$ para referirnos a la función de densidad
 de la normal estándar ($Z$). Los símbolos $\textbf{P}\{ Z \leq q_z \}$ se leen
-como _la probabilidad que un elemento aleatorio **normal estándar** sea menor que_ $q_z$. Matemáticamente,
+como _la probabilidad que un elemento aleatorio normal estándar sea menor que_ $q_z$. Matemáticamente,
 esto equivale a calcular el área definida por la gráfica 
 $\{ (z, f(z)) \mbox{ para todo } z \leq q_z \}$. Por ejemplo, supongamos que $q_z = -1.644854$
 entonces, visualmente, $\textbf{P}\{Z \leq q_z\}$ es igual a
@@ -325,7 +325,7 @@ $i$ personas que hasta ese momento han sacado una carta del mazo.
 Además, es conocido que el valor esperado y la varianza del modelo $\mathbf{Ber}(p)$ 
 son $\mu=p$ y $\sigma^2=p(1-p)$, respectivamente. Aunque $n=25$ está muy
 alejado de _asymptotia_ podemos usar la conclusión del teorema del límite central 
-como una aproximación^[Al final del día, el teorema del límite central es en sí una aproximación] y escribir
+como una aproximación^[Al final del día, el teorema del límite central es en sí una aproximación.] y escribir
 \[
   \sqrt{n}( \frac{1}{n}(X_1+\cdots+X_n) -\mu ) \approx \mathbf{N}(0,\sigma^2),
 \]
