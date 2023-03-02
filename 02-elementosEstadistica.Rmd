@@ -95,6 +95,7 @@ en este estudio de simulación concluimos que se esperaría comprar hasta 6 caja
 la mediana de la distribución de resultados del estudio de simulación.]
 de cereal para completar una colección de las tarjetas de cereales _Buendía_.
 
+
 ## Ley de Grandes Números
 
   - Simulemos haber tirado $1, 2, \ldots, 9, 10$ volados
@@ -256,7 +257,7 @@ una normal estándar es muy sencillo, ¿cierto?
 
 Recordemos que usamos el símbolo $f(z)$ para referirnos a la función de densidad
 de la normal estándar ($Z$). Los símbolos $\textbf{P}\{ Z \leq q_z \}$ se leen
-como _la probabilidad que la normal estándar sea menor que_ $q_z$. Matemáticamente,
+como _la probabilidad que un elemento aleatorio **normal estándar** sea menor que_ $q_z$. Matemáticamente,
 esto equivale a calcular el área definida por la gráfica 
 $\{ (z, f(z)) \mbox{ para todo } z \leq q_z \}$. Por ejemplo, supongamos que $q_z = -1.644854$
 entonces, visualmente, $\textbf{P}\{Z \leq q_z\}$ es igual a
@@ -291,7 +292,7 @@ utilidad.
 
 En general, el cálculo de probabilidades con cualquier distribución se reduce
 a calcular el área bajo una curva, tal cual lo hemos explicado arriba. Ahora
-ya podemos comenzar a discutir los temas de este capítulo: pruebas de hipótesis
+ya podemos comenzar a discutir los temas de esta sección: pruebas de hipótesis
 y el _$p$-valor_. Iniciamos con una presentación de ideas para después movernos 
 a presentar definiciones formales.
 
@@ -481,7 +482,7 @@ Resulta que este p-valor es prácticamente 0.0046:
 1-pnorm(19,mean=12.5,sd=2.5)
 ```
 
-Si comparamos este $p$-valor con el canónico nivel de significancia 0.05, podemos concluir
+Si comparamos este $p$-valor con el _canónico_ nivel de significancia $0.05$, podemos concluir
 que el $p$-valor obtenido es muy bajo y que por tanto contamos con evidencia
 para rechazar la hipótesis. Recordando que nuestra hipótesis es $p=0.5$,
 la aseveración que podemos hacer a la luz del $p$-valor 0.0046 es que dudamos que
