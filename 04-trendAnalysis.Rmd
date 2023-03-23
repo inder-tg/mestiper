@@ -101,13 +101,13 @@ móviles_. En términos generales una media móvil de orden $h$ tiene la siguien
   m_t^{(h)} = \sum_{k = t-h}^{t+h}\,c_k\,y_k,\quad t=h+1,\ldots,n-h. (\#eq:movingAverage)
 \end{equation}
 Esto es, al tiempo $t$, el cálculo de $m_t^{(h)}$ involucra $2h+1$ observaciones:
-$h$ observaciones tanto a la izquierda como a la derecha de $y_t$.
+la observación al tiempo $t$ así como $h$ observaciones tanto anteriores como posteriores a éste.
 El parámetro $h$ suele denominarse el orden de la media móvil, algunos
 autores también lo llaman ventana, y $2h+1$ se conoce como el 
 _ancho de banda_. Los coeficientes $c_k$ dictan el peso que se otorga
 a cada observación en el cálculo de $m_t^{(h)}$. Por ejemplo,
 $c_k$ puede ser constante e igual al recíproco multiplicativo del ancho
-de banda, es decir, $c_k = 1/(2h+1)$. En una nota posterior veremos que las
+de banda, es decir, $c_k = 1/(2h+1)$, para cualquier valor de $k$. En una nota posterior veremos que las
 medias móviles son un ejemplo de una clase general de estimadores coloquialmente
 conocida como suavizadores.
 
@@ -258,9 +258,8 @@ al estimar la producción promedio trimestral.
 ## LOWESS
 
 Otra manera de obtener un estimador suavizado de la tendencia de una serie de
-tiempo es utilizando _regresión no-paramétrica_. En una sección posterior
-ahondaremos en esta clase de modelos estadísticos. Por ahora, sólo
-presentaremos un ejemplo de regresión no-paramétrica: LOWESS (Robust locally
+tiempo es utilizando _regresión no-paramétrica_. A continuación presentaremos 
+un método de estimación vía regresión no-paramétrica: LOWESS (Robust locally
 weighted regression). Este modelo es una extensión del modelo de regresión
 polinomial local ya que en su primera etapa el algoritmo ajustará en cada
 observación un polinomio de grado $d$; operativamente, el algoritmo
@@ -423,9 +422,10 @@ Como en toda prueba de hipótesis, el cálculo del $p$-valor depende de la
 hipótesis de interés. Consideramos que los ejemplos de la siguiente sección 
 aclararán la mecánica del cálculo de esta probabilidad.
 
-Antes de pasar a los ejemplos debemos notar que la distribución de 
-probabilidades de $S_n$ es complicada de establecer; existen tablas para 
-$n\leq 10$. Para valores grandes de $n$, sin embargo, hacemos uso de la siguiente 
+Antes de pasar a los ejemplos debemos notar que es complicado
+establecer explícitamente la distribución de 
+probabilidades de $S_n$; 
+existen tablas para $n\leq 10$. Para valores grandes de $n$, sin embargo, hacemos uso de la siguiente 
 aproximación normal.^[Sí, vamos a suponer que un valor grande es $n>10$.] 
 
 Arriba mencionamos que el primer momento central de $S_n$ es cero. 
@@ -580,7 +580,7 @@ es $H_a:\mbox{existe una tendencia positiva}$.
 
 De acuerdo a estas especificaciones el p-valor asociado a la hipótesis nula
 es igual a $\textbf{P}\{ T_n > \widehat{T}_n \}$. En R obtenemos un
-$p$-valor de $3.9\times 10^{-9}$ por lo cual rechazamos **contundentemente**
+$p$-valor de $3.9\times 10^{-29}$ por lo cual rechazamos **contundentemente**
 la hipótesis nula (en favor de la alternativa). Con un $p$-valor tan bajo se conluye
 que en el periodo en consideración la producción media de cerveza en Australia
 tuvo un crecimiento.
@@ -600,12 +600,11 @@ El río Rhine es una de los más importantes de Europa; nace en Suiza y su flujo
 se mueve principalmente hacia el norte pasando por Alemania y los Países Bajos.
 En el paquete ```trend``` se encuentra la base de datos ```maxau``` la
 cual reporta series de tiempo anuales de la concentración promedio de sedimentos
-(en mg/l) y la descarga promedio (en $m^3$) desde 1965 hasta 2009. Aquí nos
-concentraremos en la concentración de sedimentos.
+(en mg/l) y la descarga promedio (en $m^3$) desde 1965 hasta 2009. Aquí resulta de interés la concentración de sedimentos.
 
 La Figura \@ref(fig:maxau) muestra la serie de tiempo de la concentración de 
 sedimentos junto con su tendencia estimada vía LOWESS; aparentemente, ha habido 
-un decrecimiento en la concetración de sedimentos desde 1965 hasta 2009. Usamos
+un decrecimiento en la concentración de sedimentos en el periodo 1965-2009. Usamos
 la prueba Mann-Kendall para probar esta hipótesis cuantitativamente.
 
 En este caso tenemos las hipótesis $H_0: \mbox{no existe tendencia}$ y
@@ -657,13 +656,13 @@ e $i$.
 Supongamos también que en cualquier punto del tiempo $t$, $Y_t = a + b\,t$.
 La propuesta de Sen es estimar $a$ y $b$ de modo robusto.
 Observa que la pendiente entre cualesquiera dos puntos $(i, Y_i)$
-y $(j, Y_j)$ está dado por
+y $(j, Y_j)$ está dada por
 \[
   b_{i,j}
   =
   \frac{Y_j - Y_i}{j-i}.
 \]
-Nota que $b_{i,j}$ es una cantidad aleatoria, ya que $Y_i$ y $Y_j$ son aleatorios,
+Nota que $b_{i,j}$ es una cantidad aleatoria, ya que $Y_i$ e $Y_j$ son aleatorios,
 y consecuentemente el conjunto de pendientes $\{b_{i,j}: 1 \leq i < j \leq n\}$ 
 tiene una distribución de probabilidades. Aunque esta distribución es
 desconocida, esto no nos impide calcular la mediana de esta distribución y 
