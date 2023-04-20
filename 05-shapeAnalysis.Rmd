@@ -296,8 +296,7 @@ El parámetro $d$ que aparece en $\what{\sigma}$ es igual al número de parámet
 estimados por el modelo de regresión, en el caso de la regresión armónica, 
 Ec. \@ref(eq:harmReg-original), $d=2p+1$. 
 
-Con todo esto, ahora podemos producir bandas de confianza alrededor de los valores
-ajustados por la regresión armónica:
+Con todo esto, ahora podemos producir bandas de confianza alrededor de los valores ajustados por la regresión armónica:
 
 ::: {.tiny}
 
@@ -338,126 +337,127 @@ legend("topleft", legend = c("haRmonics(2)", "Banda de confianza"),
 par(mar=c(4,4,2,2), new=TRUE)
 ts.plot(ts_fit, ts_cb_lower, ts_cb_upper, col=c("red", "blue", "blue"), lty=c(1,3,3))
 ```
+:::
+
+### Bandas de predicción
+
+Adaptado de @harezlak2018semiparametric. Supongamos que deseamos _predecir_ el
+valor de $y_{k_0}$
+en una nueva observación temporal para la cual $X[k_0,]$ está disponible. Es decir,
+podemos pensar que deseamos conocer el punto $(X[k_0,], y_{k_0})$ cuando
+$y_{k_0}=X[k_0,]\boldsymbol{\beta} + \varepsilon$. El predictor es
+$\what{y}_{k_0}=X[k_0,]\what{\boldsymbol{\beta}}$ el cual utiliza $X[k_0,]\what{\boldsymbol{\beta}}$ y $0$ para predecir $X[k_0,]\boldsymbol{\beta}$
+y $\varepsilon$, respectivamente.^[Notemos que $X[k_0,]\boldsymbol{\beta}$ y $\varepsilon$
+son predichas por cantidades que estiman el valor esperado de $X[k_0,]\boldsymbol{\beta}$
+y $\varepsilon$: $\ME [X[k_0,]\what{\boldsymbol{\beta}}]=\ME [X[k_0,]\boldsymbol{\beta}]=X[k_0,]\boldsymbol{\beta}$ y $\ME [\varepsilon]=0$.] La incertidumbre en esta predicción proviene de dos fuentes:
+$\boldsymbol{\beta}$ será distinto a $\what{\boldsymbol{\beta}}$ y $\varepsilon$ no será
+igual a $0$.
+
+Como la diferencia entre los valores esperados de $y_{k_0}$ y $\what{y}_{k_0}$ es igual a 0,
+tiene sentido estimar la incertidumbre de la predicción usando $y_{k_0} - \what{y}_{k_0}$.
+De este modo, ahora nos interesa conocer la variabilidad de esta cantidad. Para esto,
+notamos que $\varepsilon$ es probabilísticamente independiente a $\what{\boldsymbol{\beta}}$
+y usamos algunas propiedades conocidas para establecer:
+\begin{align*}
+  \VAR [ y_{t_0} - \what{y}_{t_0} ]
+  &=
+  \VAR [ X[k_0,]( \boldsymbol{\beta} - \what{\boldsymbol{\beta}} ) + \varepsilon  ]
+  =
+  \VAR [ X[k_0,] \what{\boldsymbol{\beta}} ] + \VAR [\varepsilon]\\
+  &=
+  \sigma^2 \left[ X[k,] \times \left( X^\top\, X \right)^{-1}\times (X[k,])^\top + 1 \right].
+\end{align*}
+
+Ahora, estamos en posición de escribir la banda de predicción al $100(1-\alpha)\%$
+alrededor de $y_{k_0}$:
+\[
+  \left[ \what{y}_{k_0} - \what{\sigma} \sqrt{ \VAR [ y_{t_0} - \what{y}_{t_0} ] }\,
+  t_{1-\frac{\alpha}{2}, n-d},
+  \what{y}_{k_0} + \what{\sigma} \sqrt{ \VAR [ y_{t_0} - \what{y}_{t_0} ] }\,
+  t_{1-\frac{\alpha}{2}, n-d}\right],
+\]
+donde $t_{1-\frac{\alpha}{2}, n-d}$ es el cuantil $1-\frac{\alpha}{2}$ de una
+$t$-Student con $n-d$ grados de libertad.
+
+Con todo esto, ahora podemos producir bandas de predicción alrededor de algunos puntos de interés. Por ejemplo, supongamos que no conocemos
+el valor de la primera fecha del año 2009 en la serie de tiempo
+de NDVI en Cerro Mohinora, con lo escrito arriba ahora podemos
+no solo producir un valor predicho sino también una banda de predicción
+reflejando la incertidumbre alrededor de este valor estimado.
+
+::: {.small}
+```{r predictionBand, echo=c(1,6:8,10:16,23:64), fig.width=8, fig.height=5, fig.cap="Banda de predicción basado en el modelo de regresión armónica (a mediano plazo). Asterisco en rojo marca el valor real del NDVI para la primera fecha de 2010.", fig.align='center'}
+fit <- numeric(L)
+
+cbands_upper <- numeric(L)
+cbands_lower <- numeric(L)
+
+nFreq <- 2
+mat <- getDesignMat(numFreq = nFreq)
+w <- getSD(mat)
+
+# ---
+i <- 9 # Año a analizar
+r <- ((i-1)*L + 1):(i*L) # Observaciones del 9no año
+temp <- haRmonics(y=z[r], method="harmR", numFreq=2, delta=0)
+fit <- temp$fitted
+# ---
+
+sigma <- sqrt(sum( ( y[r] - fit )^2 )/( 23 -  (2*nFreq+1) ))
+
+cbands_upper <- fit + sigma * sqrt(w) * qnorm(1-(0.05)/2)
+
+cbands_lower <- fit - sigma * sqrt(w) * qnorm(1-(0.05)/2)
+
+# ---
+FECHA <- 1
+
+# y0 es el predictor de NDVI para la primera fecha
+y0 <- sum(temp$amplitude * cos( (2 * pi * c(0:2) * FECHA )/L - temp$phase ))
+
+pb_upper <- y0 + sigma * sqrt(1+w[1]) * qt(1-(0.05)/2, 
+                                           df=23-(2*nFreq+1) )
+pb_lower <- y0 - sigma * sqrt(1+w[1]) * qt(1-(0.05)/2, 
+                                           df=23-(2*nFreq+1) )
+
+LOWER <- c(cbands_lower, pb_lower)
+UPPER <- c(cbands_upper, pb_upper)
+
+yRan <- range(UPPER, LOWER, na.rm = TRUE)
+yRan[1] <- yRan[1] - 0.05
+yRan[2] <- yRan[2] + 0.05
+
+par(mar=c(0,4,0,0))
+plot(0,0, type="n", bty="n", xaxt="n", yaxt="n", ylab="")
+legend("topleft", legend = c("haRmonics(2)", "Confidence band"),
+       lty = c(1,3), col = c("red", "blue"),
+       bty="n", horiz = TRUE, cex=0.75)
+
+par(mar=c(4,4,2,2), new=TRUE)
+plot(1:24, UPPER, type="l", lty=3, col="blue", ylim=yRan, ylab="",
+     xlab="")
+
+points(1:24, c(z[r], y0), pch=20, col="lightgray")
+lines(1:24, LOWER, type="l", lty=3, col="blue")
+legend("topright", legend = c("Pre. band"), fill = c("#BCD4E6"),
+       bty="n")
+legend("bottomleft", legend = c("NDVI"), pch=16, col="lightgray",
+       cex=0.8, bty="n")
+
+x <- 1:24
+polygon( c(x[ x >= 23 ], rev( x[ x >= 23 ] )),
+         c(UPPER[ x >= 23 ], rev(LOWER[ x >= 23 ])),
+         col = "#BCD4E6", border = NA)
+
+lines(1:24, c(fit,y0), col="red")
+points(24, z[208], pch=8, col="red")
+```
 
 :::
 
+De acuerdo con la Figura \@ref(fig:predictionBand) la banda de predicción
+calculada cubre (marginalmente) el valor real del NDVI de la primera fecha de 2010 (mostrado como un asterisco en rojo).
 
-<!-- ## Bandas de predicción -->
-
-<!-- Adaptado de @harezlak2018semiparametric. Supongamos que deseamos _predecir_ el  -->
-<!-- valor de $y_{k_0}$ -->
-<!-- en una nueva observación temporal para la cual $X[k_0,]$ está disponible. Es decir, -->
-<!-- podemos pensar que deseamos conocer el punto $(X[k_0,], y_{k_0})$ cuando  -->
-<!-- $y_{k_0}=X[k_0,]\boldsymbol{\beta} + \varepsilon$. El predictor es  -->
-<!-- $\what{y}_{k_0}=X[k_0,]\what{\boldsymbol{\beta}}$ el cual utiliza $X[k_0,]\what{\boldsymbol{\beta}}$ y $0$ para predecir $X[k_0,]\boldsymbol{\beta}$ -->
-<!-- y $\varepsilon$, respectivamente.^[Notemos que $X[k_0,]\boldsymbol{\beta}$ y $\varepsilon$  -->
-<!-- son predichas por cantidades que estiman el valor esperado de $X[k_0,]\boldsymbol{\beta}$  -->
-<!-- y $\varepsilon$: $\ME [X[k_0,]\what{\boldsymbol{\beta}}]=\ME [X[k_0,]\boldsymbol{\beta}]=X[k_0,]\boldsymbol{\beta}$ y $\ME [\varepsilon]=0$.] La incertidumbre en esta predicción proviene de dos fuentes: -->
-<!-- $\boldsymbol{\beta}$ será distinto a $\what{\boldsymbol{\beta}}$ y $\varepsilon$ no será -->
-<!-- igual a $0$. -->
-
-<!-- Como la diferencia entre los valores esperados de $y_{k_0}$ y $\what{y}_{k_0}$ es igual a 0, -->
-<!-- tiene sentido estimar la incertidumbre de la predicción usando $y_{k_0} - \what{y}_{k_0}$. -->
-<!-- De este modo, ahora nos interesa conocer la variabilidad de esta cantidad. Para esto, -->
-<!-- notamos que $\varepsilon$ es probabilísticamente independiente a $\what{\boldsymbol{\beta}}$ -->
-<!-- y usamos algunas propiedades conocidas para establecer: -->
-<!-- \begin{align*} -->
-<!--   \VAR [ y_{t_0} - \what{y}_{t_0} ] -->
-<!--   &= -->
-<!--   \VAR [ X[k_0,]( \boldsymbol{\beta} - \what{\boldsymbol{\beta}} ) + \varepsilon  ] -->
-<!--   = -->
-<!--   \VAR [ X[k_0,] \what{\boldsymbol{\beta}} ] + \VAR [\varepsilon]\\ -->
-<!--   &= -->
-<!--   \sigma^2 \left[ X[k,] \times \left( X^\top\, X \right)^{-1}\times (X[k,])^\top + 1 \right]. -->
-<!-- \end{align*} -->
-
-<!-- Ahora, estamos en posición de escribir la banda de predicción al $100(1-\alpha)\%$  -->
-<!-- alrededor de $y_{k_0}$: -->
-<!-- \[ -->
-<!--   \left[ \what{y}_{k_0} - \what{\sigma} \sqrt{ \VAR [ y_{t_0} - \what{y}_{t_0} ] }\, -->
-<!--   t_{1-\frac{\alpha}{2}, n-d},  -->
-<!--   \what{y}_{k_0} + \what{\sigma} \sqrt{ \VAR [ y_{t_0} - \what{y}_{t_0} ] }\, -->
-<!--   t_{1-\frac{\alpha}{2}, n-d}\right], -->
-<!-- \] -->
-<!-- donde $t_{1-\frac{\alpha}{2}, n-d}$ es el cuantil $1-\frac{\alpha}{2}$ de una  -->
-<!-- $t$-Student con $n-d$ grados de libertad. -->
-
-<!-- Con todo esto, ahora podemos producir bandas de predicción alrededor de algunos  -->
-<!-- puntos de interés. Por ejemplo, la última fecha de la serie de tiempo de NDVI de  -->
-<!-- Manantlán (libre de incendios) tiene un dato faltante, entonces podemos utilizar  -->
-<!-- esta sección para estimar el valor faltante y construir una banda de predicción  -->
-<!-- para este valor. -->
-
-<!-- ::: {.small} -->
-
-<!-- ```{r predictionBand, echo=FALSE, fig.cap="Banda de predicción basado en el modelo de regresión armónica (a mediano plazo).", fig.align='center'} -->
-<!-- numFreq <- 2 -->
-
-<!-- # yCopy <- y # can be used for HANTS -->
-<!-- # y[length(y)] <- NA  -->
-<!-- # y <- yCopy -->
-
-<!-- y_na <- y -->
-<!-- y_na[length(y_na)] <- NA -->
-<!-- # W <- as.numeric(y_na[97:108]) # useful for plotting purposes -->
-
-<!-- yMat <- vecToMatrix(y,23) -->
-<!-- y[length(y)] <- median(yMat[1:8,23]) -->
-<!-- Y <- as.numeric(y[97:108]) -->
-
-<!-- # Y es un vector con mediciones NDVI  -->
-<!-- # Y[12] se rellenó con la mediana de obs. históricas  -->
-<!-- # de la misma fecha -->
-<!-- temp <- haRmonics(y=Y, method="harmR", numFreq=2, delta=0) -->
-
-<!-- fit <- temp$fitted -->
-
-<!-- sigma <- sqrt(sum( ( Y - fit )^2 )/( 12 -  (2*numFreq+1) )) -->
-
-<!-- cb_upper <- fit + sigma * sqrt(w) * qnorm(1-(0.05)/2) -->
-
-<!-- cb_lower <- fit - sigma * sqrt(w) * qnorm(1-(0.05)/2) -->
-
-<!-- # y0 es el predictor de NDVI para la última fecha  -->
-<!-- y0 <- sum(temp$amplitude * cos( (2 * pi * c(0:2) * L)/L - temp$phase )) -->
-
-<!-- pb_upper <- y0 + sigma * sqrt(1+w[1]) * qt(1-(0.05)/2, df=12-(2*numFreq+1) ) -->
-<!-- pb_lower <- y0 - sigma * sqrt(1+w[1]) * qt(1-(0.05)/2, df=12-(2*numFreq+1) ) -->
-
-<!-- UPPER <- c(cb_upper[-12], pb_upper) -->
-<!-- LOWER <- c(cb_lower[-12], pb_lower) -->
-
-<!-- yRan <- range(UPPER, LOWER, W, na.rm = TRUE) -->
-<!-- yRan[1] <- floor(yRan[1]) -->
-<!-- yRan[2] <- ceiling(yRan[2]) -->
-
-<!-- par(mar=c(0,4,0,0)) -->
-<!-- plot(0,0, type="n", bty="n", xaxt="n", yaxt="n", ylab="") -->
-<!-- legend("topleft", legend = c("haRmonics(2)", "Confidence band"),  -->
-<!--        lty = c(1,3), col = c("red", "blue"),  -->
-<!--        bty="n", horiz = TRUE, cex=0.75) -->
-
-<!-- par(mar=c(4,4,2,2), new=TRUE) -->
-<!-- plot(1:12, UPPER, type="l", lty=3, col="blue", ylim=yRan, ylab="",  -->
-<!--      xlab="") -->
-<!-- title(paste0("PIXEL:", PIXEL), adj = 1, line = 0.5) -->
-
-<!-- points(1:12, W, pch=20, col="lightgray") -->
-<!-- lines(1:12, LOWER, type="l", lty=3, col="blue") -->
-<!-- legend("topright", legend = c("Pre. band"), fill = c("#BCD4E6"),  -->
-<!--        bty="n") -->
-<!-- legend("bottomleft", legend = c("NDVI"), pch=16, col="lightgray",  -->
-<!--        cex=0.8, bty="n") -->
-
-<!-- x <- 1:12 -->
-<!-- polygon( c(x[ x >= 11 ], rev( x[ x >= 11 ] )), -->
-<!--          c(UPPER[ x >= 11 ], rev(LOWER[ x >= 11 ])),  -->
-<!--          col = "#BCD4E6", border = NA) -->
-
-<!-- lines(1:12, c(fit[-12],y0), col="red") -->
-<!-- ``` -->
-
-<!-- ::: -->
 
 <!-- ```{r, include=FALSE} -->
 <!-- # intersect 2012153_2021121_NDVI_iNDVI.tif y SHP_noQ -->
