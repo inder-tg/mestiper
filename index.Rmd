@@ -51,7 +51,7 @@ library(sephora)
 
 source(paste0(getwd(),"/Rscripts/funciones_auxiliares.R"))
 
-mohinoraFILES <- list.files(path = "C:/Users/inder/OneDrive/Desktop/mestiper/data/mohinora",
+mohinoraFILES <- list.files(path = paste0(getwd(),"/data/mohinora"),                        # /Users/inder/OneDrive/Desktop/mestiper/data/mohinora",
                             pattern = ".RData",
                             full.names = TRUE)
 
@@ -80,6 +80,10 @@ getSD <- function(m){
 }
 
 getDesignMat <- function(numFreq, freq=23){
+  
+  # numFreq <- 23
+  # freq <- 23*9
+  
   mat <- matrix(0, nrow = freq, ncol = min(2 * numFreq + 1, freq))
   vecTs <- 2 * pi * (0:(freq-1)) / freq
   mat[,1] <- 1
