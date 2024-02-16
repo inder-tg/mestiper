@@ -239,7 +239,7 @@ El resultado empírico mostrado arriba es un ejemplo del denominado **Teorema de
 Límite Central**
 
 <div class="centered">
-  ![Figura 4. Teorema del Límite Central.](figs/CLT.png){width=50%, height=35%}
+  ![Figura 4. Teorema del Límite Central.](figs/CLT_2024.png){width=50%, height=35%}
 </div>
 
 
