@@ -1,0 +1,560 @@
+
+# Puntos de cambio
+
+El problema de la estimación de puntos de cambio -conocido también 
+como estimación de cambios estructurales en otros campos de la ciencia- es uno de 
+los clásicos de la literatura estadística.
+
+Los trabajos de Page (@Page.54, @Page.55) son quizás los primeros intentos
+por formular el problema de identificar automáticamente un cambio de régimen
+en una muestra aleatoria. Brevemente, este problema puede describirse de la
+siguiente manera.
+
+Supongamos que $(X_1, \ldots, X_n)$ forman una muestra aleatoria y gausiana, es 
+decir, son observaciones que tienen una distribución normal, independientes, 
+con media $\mu$ y con varianza común e igual a 1; con símbolos podemos escribir $X_i \sim \msf{N}(\mu, 1)$.
+Se conjetura, sin embargo, que existe un _índice_, denotado aquí con el símbolo,
+$\tau$ en el conjunto de números $\{1,\ldots,n\}$ tal que
+
+  1. Las observaciones $X_1, X_2,\ldots, X_{\tau-1}, X_{\tau}$ tienen un valor esperado 
+  común e igual a $\mu_1$
+  
+  2. Las observaciones $X_{\tau+1}, X_{\tau+2}, \ldots, X_n$ tienen un valor esperado
+  común e igual a $\mu_2$
+  
+Podemos resumir lo anterior con los símbolos
+
+\[
+  X_i \sim 
+\begin{cases}
+  \msf{N}(\mu_1, 1) & \mbox{ si } i \leq \tau\\
+  \msf{N}(\mu_2, 1) & \mbox{ si } i > \tau\\
+\end{cases}
+\]
+
+  
+Si bien la estimación de $\mu_1$ y $\mu_2$ es una tarea relativamente sencilla,
+la determinación de un valor para $\tau$ -con garantías estadísticas- abrió la puerta
+para muchas líneas de investigación científica. A continuación exploraremos las
+ramificaciones del problema de punto de cambio en el análisis de series de tiempo.
+
+## Prueba de homogeneidad basada en anomalías estandarizadas
+
+Consideremos una muestra $X_i \sim \msf{N}(\mu, \sigma^2)$ donde $i=1,\ldots,n$,
+y tanto $\mu$ como $\sigma^2$ son desconocidas. Al igual que en el problema clásico,
+se conjetura la existencia de un punto de cambio $\tau$. 
+
+En el contexto de determinar cambios abruptos en datos anuales de precipitación,
+@alexandersson1986 desarrolló la siguiente estrategia para estimar $\tau$. Calculemos las _anomalías estandarizadas_:
+
+\[
+  Z_i = \frac{X_i - \mu}{\sigma},
+\]
+las cuales, a partir de los supuestos del párrafo anterior, tienen una distribución 
+normal estándar; en símbolos, $Z_i \sim \msf{N}(0,1)$.
+
+A partir de estas anomalías estandarizadas se construye la siguiente prueba
+de hipótesis
+
+  - $H_0$: $Z_i \sim \msf{N}(0,1)$ para $i=1,\ldots,n$.
+  
+  - $H_a$: 
+  
+    \[
+      Z_i \sim 
+      \begin{cases}
+        \msf{N}(\mu_1, 1) & \mbox{ para } 1 \leq i \leq \tau\\
+        \msf{N}(\mu_2, 1) & \mbox{ para } \tau+1 \leq i \leq n\\
+      \end{cases}
+    \]
+
+Como estadístico de prueba se utilizó el _estadístico razón de verosimilitud_, 
+otro clásico en la literatura estadística. La receta básica para construir este
+estadístico estipula maximizar la función de verosimilud respecto a las restricciones
+impuestas por cada hipótesis -$H_0$ y $H_a$- para posteriormente tomar el cociente 
+de estas verosimilitudes optimizadas. 
+
+En el caso presente el estadístico razón de verosimilitud está definido como:
+
+\begin{equation}
+  T_0
+  =
+  \max_{1\leq \tau\leq n}\,\sup_{\mu_1\in \R}\,\sup_{\mu_2\in \R}\,
+  \frac{L_{H_a}(\bs{z}; \mu_1, \mu_2)}{L_{H_0}(\bs{z})}, (\#eq:LRT-anomalies)
+\end{equation}
+donde $L_{H}$ denota la función de verosimilitud bajo la hipótesis genérica $H$
+y $\bs{z}=(z_1,\ldots,z_n)$.
+
+En el caso de la hipótesis nula $H_0$, la función de verosimilitud es igual a
+\[
+  L_{H_0}(\bs{z})
+  \propto
+  \prod_{i=1}^n\,\mbox{exp}\{ - \frac{z_i^2}{2} \}
+  =
+  \exp\{ -\frac{1}{2}\,\sum_{i=1}^n\,z_i^2 \}.
+\]
+De manera equivalente, podemos utilizar la función log-verosimilitud^[¿Qué ganatiza esta equivalencia?]:
+\[
+  \log L_{H_0}(\bs{z})
+  =
+  -\frac{1}{2}\,\sum_{i=1}^n\,z_i^2.
+\]
+
+Si por el momento suponemos que el valor de $\tau$ es conocido, entonces, no es
+difícil ver que 
+
+\[
+  \sup_{\mu_1\in \R}\,\sup_{\mu_2\in \R}\,\log L_{H_0}(\bs{z}; \mu_1, \mu_2)
+  =
+  \sum_{i=1}^{\tau}\,(z_i - \bar{z}_{1:\tau})^2
+  + 
+  \sum_{i=\tau+1}^{n}\,(z_i - \bar{z}_{(\tau+1):n})^2, 
+\]
+donde
+\[
+  \bar{z}_{1:\tau}
+  =
+  \frac{1}{\tau}\,\sum_{i=1}^{\tau}\,z_i\quad\mbox{ y }\quad
+  \bar{z}_{(\tau+1):n}
+  =
+  \frac{1}{n-\tau}\,\sum_{i=\tau+1}^{n}\,z_i.
+\]
+
+Luego de algunas cuentas arribamos a la forma final del estadístico $T_0$:
+\[
+  T_0 = \max_{1\leq \tau\leq n}\{ \tilde{T}_\tau \},
+\]
+donde
+\begin{equation}\label{eq:T-tilde}
+  \tilde{T}_\tau
+  =
+  \tau\,( \bar{Z}_{1:\tau} )^2
+  +
+  (n-\tau)\,( \bar{Z}_{(\tau+1):n} )^2.
+\end{equation}
+
+Los conceptos presentados alrededor de esta prueba de homogeneidad basada
+en las anomalías estandarizadas sirven, entre otras cosas, para presentar una estrategia
+general en la estimación estadística de un punto de cambio. Por ejemplo, los detalles
+expuestos en esta sección acerca del cálculo del estadístico razón de verosimilitud
+pueden servir como referencia puesto que en las siguientes secciones presentaremos
+otras pruebas basadas en este estadístico -o en variantes del mismo- sin ahondar
+en los detalles de la obtención de los estadísticos de prueba.
+
+Por otra parte, es pertinente hacer una pausa para discutir algunos inconvenientes
+de la prueba de homogeneidad basada en anomalías. Comencemos puntualizando que esta
+prueba depende fuertemente del supuesto de gausianidad de las observaciones; nótese
+que todas las cuentas de arriba están basadas en el supuesto que $Z_i \sim \msf{N}(0,1)$.
+Además, al no conocer $\sigma^2$, este valor debe ser estimado, en este caso 
+como una varianza ponderada:
+\begin{equation}
+  \hat{\sigma}_\tau^2
+  =
+  \frac{ (\tau-1)\,s_{1:\tau}^2 + (n-\tau-1) s_{(\tau+1):n}}{n-2}, (\#eq:sigma-pooled)
+\end{equation}
+donde $s_{i:j}$ denota la desviación estándar de las observaciones $\{z_i,\ldots,z_j\}$.
+Observa que $\hat{\sigma}_\tau^2$ depende de $\tau$ -en principio, el valor que se desea
+estimar- por lo que al calcular las $z_i$ es probable que incurramos en algún sesgo 
+de estimación.
+
+
+## Alternativa a la prueba de homogeneidad
+
+Además de exponer un excelente recuento de los avances en la solución del problema
+de estimación de puntos de cambio en series de tiempo climáticas, @reeves2007 proponen 
+una aparente corrección a las limitaciones presentadas por la estrategia de 
+@alexandersson1986.
+
+Específicamente, consideremos las siguientes hipótesis
+
+  - $H_0$: $X_i\sim \msf{N}(\mu, \sigma^2)$ para $i=1,\ldots,n$.
+  
+  - $H_a$: 
+  
+  \[
+    X_i 
+    =
+    \begin{cases}
+      \msf{N}(\mu_1, \sigma^2) & \mbox{ para } 1\leq i\leq \tau\\
+      \msf{N}(\mu_2, \sigma^2) & \mbox{ para } \tau+1\leq i\leq n
+    \end{cases},
+  \]
+y el estadístico de prueba
+\[
+  T_{\max}
+  =
+  \max_{1\leq \tau\leq n}|T_\tau|,\quad
+  T_\tau
+  =
+  \frac{\bar{X}_{1:\tau} - \bar{X}_{(\tau+1):n}}{ \hat{\sigma}_\tau\,
+  \sqrt{ \tau^{-1} + (n-\tau)^{-1} } },
+\]
+donde $\bar{X}_{i:j}$ es el promedio aritmético de los elementos aleatorios
+$X_i,\ldots,X_j$ y $\hat{\sigma}_\tau$ es la raíz cuadrada del estimador de varianza
+ponderada definido en \@ref(eq:sigma-pooled).
+
+Al igual que $T_0$, $T_\max$ es un estadístico de razón de verosimilitud. Si $\tau$
+fuese conocido, entonces $\tilde{T}_\tau$ en \@ref(eq:T-tilde) tendría una distribución $\chi$-cuadrada con 2 grados de libertad (bajo la hipótesis nula $H_0$). Similarmente, cuando $\sigma^2$ es desconocida, $|T_\tau|$ es el estadístico estándar ($t$-test) 
+en la prueba de igualdad de medias de dos muestras; en estas condiciones y bajo la hipótesis nula $H_0$ de esta sección, $|T_\tau|$ tiene una distribución $t$ con $n-2$ 
+grados de libertad. 
+
+Observa que tanto $T_\tau^2$ como $|T_\tau|$ proveen la misma información sobre
+el punto de cambio. A partir de esto tenemos que
+\[
+  T_\max^2 
+  =
+  \max_{1\leq \tau\leq n}\,T_\tau^2
+\]
+y este estadístico suele encontrarse en la literatura de punto de cambio. Por ejemplo,
+es relativamente fácil determinar puntos críticos de la distribución de $T_\max^2$.
+Típicamente, cuando $T_\max^2$ excede un umbral de rechazo predeterminado e igual
+a algún nivel de significancia (frecuentemente 5%) entonces la prueba determina la
+existencia de un punto de cambio. El valor $\hat{\tau}$ que maximiza $T^2_{\hat{\tau}}$
+se toma como el estimador del punto de cambio $\tau$.
+
+## Variante no-paramétrica a la prueba de homogeneidad
+
+Los procedimientos presentados hasta ahora usan fuertemente el supuesto de 
+gausianidad en las observaiones. Por ejemplo, basado en este supuesto derivamos 
+$T_0$ y $T_\max$ como
+estadísticos de razón de verosimilitud -con las propiedades estadísticas que esto 
+conlleva. El supuesto de gausianidad, sin embargo, es altamente cuestionable, en
+particular en series de tiempo climáticas. Por lo tanto es deseable tener estrategias
+robustas -al supuesto de gausianidad- para estimar un punto de cambio.
+
+Una de estas estrategias se basa en la aplicación de procedimientos paramétricos
+-como los descritos arriba- a los _rangos relativos_ de los datos en lugar
+de utilizar las observaciones originales. Con una muestra suficientemente grande,
+es posible demostrar que estas pruebas no-paramétricas son sólo ligeramente
+menos potentes (en el sentido estadístico) y suelen proveer mejores tasas de detección
+de falsos positivos aún cuando los supuestos paramétricos no son satisfechos.
+
+El estadístico $T_\max$ es el máximo de $n-1$ estadísticos $t$ para probar
+igualdad de medias de dos muestras. Esta característica hace que un candidato para una versión no-paramétrica de $T_\max$ se base en el máximo de $n-1$ estadísticos Wilcoxon de suma de rangos, también conocido como estadístico Mann-Whitney. El estadístico
+Wilcoxon de suma de rangos es una variante no-paramétrica de la prueba $t$ para 
+diferencia de parejas.
+
+Concretamente, una alternativa de prueba no-paramétricade homogeneidad es aquella que 
+detecta un punto de cambio al tiempo $\tau$ cuando $W_\max$ es suficientemente grande:
+\[
+  W_\max
+  =
+  \max_{1\leq \tau\leq n}\, W_\tau,
+\]
+donde
+\[
+  W_\tau
+  =
+  12\,\frac{\big[\sum_{t=1}^\tau r_t - \tau\,(n+1)/2\big]^2}{\tau(n-\tau)(n+1)}.
+\]
+Aquí $r_t$ es el rango del $t$-ésimo elemento de la serie. Por ejemplo,
+si $X_{10}$ es el tercer valor más grande, entonces $r_{10}=3$.
+
+La distribución de $W_\max$ puede ser obtenida mediante simulación. El tiempo
+$\hat{\tau}$ en el cual $W_\tau$ alcanza su máximo es el estimador no-paramétrico
+del punto de cambio $\tau$.
+
+## Pruebas sobre cambio en la tendencia
+
+Los métodos discutidos hasta ahora permiten estimar una tendencia _constante
+a pedazos_. En efecto, nota que al determinar la existencia y localización del punto de cambio $\tau$ con los métodos discutidos arriba
+podemos estimar la _tendencia_ antes y después de $\tau$ a partir de calcular el promedio aritmético de las observaciones $\{X_1,\ldots,X_{\tau}\}$ y $\{X_{\tau+1},\ldots,X_n\}$. 
+
+Hinkley (@hinkley1969, @hinkley1971) propuso la siguiente estrategia 
+de _regresión en dos fases_:
+\begin{equation}
+  Y_t
+  =
+  \begin{cases}
+    \alpha + \beta_1\,x_t + \varepsilon_t & \mbox{ si } 1\leq t \leq\tau\\
+    \alpha + \beta_2\,x_t + \varepsilon_t & \mbox{ si } \tau+1\leq t \leq n\\
+   \end{cases}. (\#eq:model-hinkley)
+\end{equation}
+En este esquema, los _predictores_ $x_1\leq x_2\leq\cdots\leq x_n$ están
+ordenados y son conocidos, los errores $\{\varepsilon_t\}$ son independientes,
+e identicamente distribuidos $\msf{N}(0,\sigma^2)$. Los parámetros $\mu_1$,
+$\mu_2$, $\beta_1$, $\beta_2$ y $\tau$ son **desconocidos**. 
+
+Nota que el modelo de Hinkley permite que las tendencias estimadas. pre y post
+punto de cambio, sean segmentos de recta con pendiente no necesariamente igual
+a cero; mediante este modelo la tendencia estimada es _lineal a pedazos_.
+
+El modelo de regresión en dos fases de Hinkley impone una restricción de continuidad 
+sobre las líneas de regresión en el punto de cambio $\tau$, lo cual equivale a 
+satisfacer que $\mu_2 = \mu_1 + (\beta_1 - \beta_2)\,x_\tau$.
+
+De acuerdo a @reeves2007, en un entorno aplicado, esta restricción puede ser poco realista. Aunque es posible observar cambios lentos y continuos, por ejemplo, debido
+a un incremento en la urbanización (el denominado efecto de una isla de calor), 
+el deterioro de los instrumentos de medición ó un cambio gradual en la ubicación
+de la estación de monitoreo son cambios que típicamente inducen una discontinuidad
+en la tendencia de la serie de tiempo.
+
+Para atender las limitaciones mencionadas en el párrafo de arriba, @lund2002
+revisitaron el modelo \@ref(eq:model-hinkley) permitiendo cambios estructurales tanto 
+en los saltos $(\mu_1\neq\mu_2)$ como en las tendencias $(\beta_1\neq\beta_2)$ alrededor del punto de cambio. En este caso, las hipótesis estadísticas de trabajo
+son
+\begin{align*}
+  H_0 
+  &:
+  \mu_1=\mu_2 \mbox{ y } \beta_1=\beta_2\\
+  H_a
+  &:
+  \mu_1\neq\mu_2 \quad \mbox{ y/o }\quad \beta_1\neq\beta_2.
+\end{align*}
+
+Si el punto de cambio $\tau$ fuese fijo y conocido entonces $H_0$ podría establecerse mediante el uso del estadístico $F$ para reducción de modelo:
+\[
+  F_{\tau}
+  =
+  \frac{(\mbox{SSE}_0 - \mbox{SSE}_a)/2}{\mbox{SSE}_a/(n-4)}
+  \sim
+  F_{2,n-4}.
+\]
+donde $\mbox{SSE}_0$ y $\mbox{SSE}_a$ son las sumas de los residuales
+al cuadrado calculados bajo $H_0$ y $H_a$ (con un punto de cambio en $\tau$),
+respectivamente. Un valor grande de $F_\tau$ sugiere rechazar $H_0$ en favor
+de $H_a$ con un punto de cambio al tiempo $\tau$.
+
+Cuando $\tau$ es desconocido, el cual en muchos aspectos es el caso práctico, 
+hay que emplear el estadístico
+\[
+  F_\max
+  =
+  \max_{1\leq \tau\leq n }\, F_\tau.
+\]
+Al igual que con $T_0$, $T_\max$ y $W_\max$, la distribución de $F_\max$ es desconocida y por tanto podemos simularla. En este punto, la determinación de existencia y ubicación de un punto de cambio puede atenderse análogamente a lo discutido con los estadísticos $T_0$, $T_\max$ y $W_\max$.
+
+## Múltiples puntos de cambio
+
+Las ideas discutidas anteriormente cubren parte de la teoría y métodos
+alrededor del problema de estimación de un único cambio abrupto en una serie de tiempo.
+A partir de la creciente disponibilidad de largas series de tiempo de diversas variables
+climáticas, econométricas, biofísicas, etc, se convirtió casi en una necesidad
+extender la teoría y métodos del problema de punto de cambio para hallar estadísticamente
+múltiples cambios estructurales en una serie de tiempo. En esta sección vamos a presentar
+el método Breaks For Additive Seasonal Trends (**BFAST**) de @verbesselt2010detecting.
+
+Originalmente presentado en el análisis de cambios abruptos en la
+tendencia de series de tiempo de NDVI de imágenes MODIS, BFAST está basado en 
+teoría estadística y métodos numéricos sólidos por lo que su uso no está limitado
+a series de tiempo de índices de vegetación derivados de un sensor en particular. 
+Para aplicar BFAST a una serie de tiempo, consideramos que el único requisito es 
+que la serie admita una representación STE como la discutida en una sección previa.
+
+### BFAST: cambios abruptos en la tendencia
+
+Usemos $y_t$ para denotar el valor del NDVI al tiempo $t$ y supongamos que la
+siguiente repreentación es satisfecha:
+\begin{equation}
+  y_t
+  =
+  S_t + T_t + \varepsilon_t,\quad t=1,\ldots,N, (\#eq:BFAST)
+\end{equation}
+donde $S_t$ y $T_t$ denotan los componentes de estacionalidad y tendencia, 
+respectivamente. Los errores $\{\varepsilon_t\}$ se asumen independientes con
+media cero y varianza $\sigma^2$. $N$ denota el tamaño muestral.
+
+Para modelar la tendencia $T_t$ se supone que ésta es lineal a pedazos. Se supone
+además que existen $K$ puntos de cambio en la tendencia, de tal forma que la tendencia
+global se segmenta en $K-1$ intervalos. En el $j$-ésimo segmento la tendencia está
+dada por
+\[
+  T_t
+  =
+  \alpha_j + \beta_j\,t,\quad t\in[\tau_j,\tau_{j+1}).
+\]
+Nota que tenemos $0=\tau_0\leq \tau_1\leq \cdots\leq \tau_{K} \leq \tau_{K+1}=N$
+puntos de cambio, $K$ de ellos son **desconocidos** al igual que el valor de $K$.
+
+### BFAST: algoritmo de estimación
+
+Para estimar $K$ se utiliza el Bayesian Information Criterion (BIC) el cual
+es una métrica para seleccionar un modelo entre un conjunto finito de modelos. 
+Formalmente, el BIC de un modelo se define como
+\[
+  BIC
+  =
+  k\,\log(n) - 2\log (\hat{L}),
+\]
+donde $k$ es el número de parámetros estimados en el modelo, $n$ es el tamaño
+de la muestra y $\hat{L}$ denota la función de verosimilitud evaluada en los
+estimadores que maximizan esta función; $\log$ es logaritmo natural. Típicamente,
+modelos con BIC bajos son preferidos.
+
+Una vez que $K$ ha sido estimado, entonces los puntos de cambio $\{\tau_j\}$
+se estiman a través de resolver $K-1$ problemas de mínimos cuadrados:
+\[
+  \argMin_{\tau_1,\ldots,\tau_K}\,
+  \sum_{i=0}^{K-1}\,
+  \sum_{t=\tau_i}^{\tau_{i+1}}\,
+  \left( y_t - \alpha_t - \beta_t\, t \right)^2
+\]
+
+Una vez estimados los puntos de cambio $\{\tau_j\}$ se hace uso de una técnica
+denominada _$M$-estimation_ para estimar los valores de los interceptos $\{\alpha_j\}$
+y pendientes $\{\beta_j\}$ de forma robusta; en este paso hay que estimar $2 (K-1)$
+parámetros.
+
+En principio estos pasos serían muy engorrosos de no ser por la existencia 
+de la **programación dinámica**. Esta técnica, quizás originada por Richard Bellman 
+@bellman1961, ha ganado gran interés en años recientes al permiter descomponer
+problemas complejos en pequeñas piezas cuya solución es relativamente sencilla
+de obtener. De manera notable, el algoritmo asegura que las soluciones de las partes
+pequeñas sean guardadas para su posterior uso en la resolución del problema global.
+De tal forma que las soluciones dadas a través del uso de la programción dinámica
+se alcanzan en tiempo adecuado.
+
+### BFAST: cambios abruptos en la estacionalidad
+
+Las ideas presentadas para estimar cambios abruptos en la tendencia de series de
+tiempo son directamente aplicables para estimar también cambios abruptos en la
+componente estacional. Sólo hay que considerar que el conjunto de cambios abruptos
+del componente estacional no es necesariamente igual a aquel de la tendencia. Es decir,
+los cambios abruptos en la componente estacional pueden ocurrir en otra ubicaciones,
+digamos en los puntos $\{\tau_j^\ast\}$.
+Otra diferencia está en el modelo utilizado para describir la dinámica entre puntos 
+de cambio. A diferencia de la tendencia lineal a pedazos, en el caso de la componente
+estacional se puede utilizar una regresión armónica o bien una regresión
+con variable temporal _dummy_ para describir la dinámica entre puntos de cambio.
+
+### BFAST: OLS-MOSUM test
+
+Para determinar estadísticamente la existencia de múltiples cambios
+abruptos en una serie de tiempo, BFAST emplea el estadístico OLS-MOSUM para
+probar consistencia de parámetros, véase @Chu.etal.1995.
+
+Brevemente, supongamos que $\hat{T}_t$ y $\hat{S}_t$ son estimadores de la tendencia
+y la estacionalidad en \@ref(eq:BFAST). A partir de esto podemos calcular los
+residuales
+\[
+  r_t
+  =
+  y_t - \hat{T}_t - \hat{S}_t.
+\]
+Con estos residuales y definiendo un **ancho de banda** $h\in (0,1)$ construimos
+los residuales suavizados por una suma móvil (MOSUM):
+\[
+  r_{\ell,h}
+  =
+  \frac{ r_{\kappa+\ell+1} +  r_{\kappa+\ell+2}  \cdots + r_{\kappa+\ell+\lfloor (N-\kappa)*h \rfloor} }{\hat{\sigma}\, \lfloor (N-\kappa)h \rfloor^{1/2} },
+\]
+donde $\ell=0,1,\ldots,N-\kappa-\lfloor (N-\kappa)h \rfloor$,
+$\lfloor x \rfloor$ denota la parte entera de $x$, $\kappa=2(K-1)$ y
+$\hat{\sigma}$ es un estimador apropiado de $\sigma$.
+
+Basado en estos residuales tenemos el estadístico
+\[
+  MS_{N,h}
+  =
+  \max_{0\leq \ell \leq N_{\kappa,h}} | r_{\ell,h} |,
+\]
+donde $N_{\kappa,h}=N-\kappa-\lfloor (N-\kappa)h \rfloor$.
+
+@Chu.etal.1995 probaron que **bajo la hipótesis nula de no cambios**, 
+la distribución de $MS_{N,h}$ converge a la distribución de la variable aleatoria
+\[
+  \max_{0\leq t\leq \frac{1}{h}-1}| W(t+1) -W(t) |
+\]
+donde $W$ denota un proceso de Wiener estándar (movimiento Browniano).
+  
+De este resultado se sigue que el $p$-valor de esta prueba es equivalente a calcular 
+\[
+\boldsymbol{P}\{ | W(t+1) -W(t) | > q_\alpha \mbox{ para algún } 0 \leq t\leq 1/h-1\}
+\]
+La distribución de $MS_{N,h}$ puede ser obtenida _fácilmente_ vía una simulación.
+
+BFAST utiliza el mismo estadístico OLS-MOSUM para determinar cambios abruptos 
+en el componente estacional.
+
+### BFAST: consideracions finales
+
+  - El estadístico empleado por BFAST para identificar cambios abruptos
+  depende del valor de $h$
+  
+  - Para valores grandes de $h$, las sumas móviles incluirán _muchos_ residuales
+  propiciando **sobre suavizamiento** y dejando disponibles sólo algunas sumas
+  móviles para detectar cambios abruptos
+  
+  - Para valores _muy pequeños_ de $h$, las sumas móviles incluirán _muy pocos_
+  residuales adquiriendo así una apariencia similar a la de los residuales originales;
+  la variación muestral en las sumas móviles será probablemente alta
+  
+  - ¿Qué valor de $h$ utilizar?
+  
+  - ¿Cómo se estima $\sigma$?
+  
+  - **bfast01**
+
+
+## Estimando puntos de cambio con R
+
+Por una cortesía de Robert Lund tenemos los datos de promedio anual de temperatura
+de Tuscaloosa, Alabama analizados en @reeves2007.
+
+Esta serie de tiempo está apropiadamente documentada y se conocen 3 puntos en
+el tiempo en donde la serie experimentó cambios abruptos como resultado de cambios
+en el equipo de medición o por reubicación de la estación de monitoreo: Junio 1939,
+Noviembre 1956 y Junio 1987.
+
+
+```{r cps-data}
+dirDATA <- paste0(getwd(), "/data/cps")
+txtFILES <- list.files(path=dirDATA, pattern=".txt", full.names=TRUE)
+txtFILES
+```
+
+En lugar de implementar los métodos descritos en estas notas empleamos los
+paquetes **changepoint** y **bfast** para estimar puntos de cambio no documentados 
+en esta serie de tiempo.
+
+Empleando la función ```cpt.meanvar()``` de changepoint durante el periodo 1940-1986,
+encontramos un punto de cambio hacia 1957.
+```{r cps-yearly, warning=FALSE}
+test1 <- read.table(txtFILES[1])
+tuscaloosa_short_ts <- ts(test1$V2[41:87], start = c(1940,1),
+                          end = c(1986,1), frequency = 1)
+
+cps <- cpt.meanvar(tuscaloosa_short_ts,
+                    penalty = "Asymptotic", 
+                    pen.value = 0.01, 
+                    method="BinSeg", Q=5)
+cps
+
+plot(cps)
+```
+
+No es correcto aplicar ```bfast()``` directamente sobre los registros anuales debido
+a que esta serie no tiene un componente estacional. Por tanto, optamos por aplicar
+```bfast()``` a la serie de registros mensuales de temperatura durante el periodo 1940-1967 identificando un cambio hacia 1950.
+```{r cps-monthly, warning=FALSE}
+test2 <- read.table(txtFILES[2])
+tuscaloosa_monthly_ts <- ts(test2$V3[(39*12+1):(67*12)], 
+                            start = c(1940,1), end = c(1967,12),
+                            frequency = 12)
+
+BFAST <- bfast(tuscaloosa_monthly_ts, h=0.23)
+
+BFAST
+
+plot(BFAST)
+```
+
+
+# Bibliografía
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

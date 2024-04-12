@@ -1,0 +1,311 @@
+
+# Análisis de Anomalías
+
+Una vez que hemos evaluado la calidad de nuestro dataset original y 
+aplicado algún método estadísticamente sensible para rellenar los huecos de las
+imágenes, estamos en posición de realizar uno de los análisis de series de tiempo
+de imágenes satelitales más comunes, a saber, al análisis de anomalías estandarizadas.
+
+## Anomalías estandarizadas
+
+Comencemos definiendo formalmente el objeto _anomalía estandarizada_. En general,
+consideremos un vector de observaciones $\bs{y}=(y_1,\ldots,y_n)$ a partir del cual
+podemos calcular un promedio aritmético (o media) y una desviación estándar. Usemos
+los símbolos $\hat{\mu}$ y $\hat{\sigma}$ para denotar a esta media y desviación estándar,
+respectivamente. Entonces, el vector $\bs{z} = (\bs{y}-\hat{\mu})/\hat{\sigma}$ 
+se suele denominar como anomalía estandarizada.
+
+Es altamente probable que esta definición tenga su origen en el denominado
+$Z$-score de la distribución normal. Para ser más precisos,
+supongamos que tenemos una muestra $\bs{X}=(X_1,\ldots,X_n)$ de $n$ variables aleatorias distribuidas normal con media $\mu$ y desviación estándar $\sigma$.
+Bajo estas condiciones, es sabido que la transformación $X_i \mapsto (X_i - \mu)/\sigma$ produce una nueva variable aleatoria normal cuya media y desviación
+estándar son iguales a 0 y 1, respectivamente. En estadística esta transformación se conoce como _estandarización_ y la nueva variable aleatoria típicamente se denota con la letra $Z$.^[Observe que estos resultados son independientes del valor de $i$.] Pero, ¿qué particularidades tiene $Z$?
+Para responder esta pregunta hemos de recordar algunos pasajes de la sección \@ref(test).
+
+En efecto, la distrubución de $Z$ luce como en la Figura \@ref(fig:probZ). Para
+efectos de esta sección, resulta de interés enfocarnos en ciertas regiones de
+esta figura. Por ejemplo, sin pérdidad de generalidad, la región de posibles valores de $X_1$ que se encuentran alejados hasta una desviación estándar $(\sigma)$ de la media $\mu$ tiene la siguiente masa de probabilidad:
+\begin{align*}
+  \bs{P}\{ | X_1 - \mu | \leq \sigma \}
+  &=
+  \bs{P}\left\{ \left| \frac{X_1 - \mu}{\sigma} \right| \leq 1 \right\}\\
+  &=
+  \bs{P}\{ | Z | \leq 1 \}
+  =
+  \bs{P}\{ -1 \leq Z \leq 1 \}\\
+  &=
+  \bs{P}\{Z \leq 1\} - \bs{P}\{Z \leq -1\}
+  =
+  1 - 2 \bs{P}\{Z \leq -1\} = 0.6826895,
+\end{align*}
+lo que gráficamente es equivalente al área gris de la Figura \@ref(fig:zProb). 
+Observe que la probabilidad calculada arriba es idéntica a la probabilidad que
+el $Z$-score esté concentrado en la región $[-1,1]$.^[En ```R``` esta probabilidad se calcula empleando el código ```1-2*pnorm(-1)```.]
+
+```{r zProb, fig.width=5, fig.height=5, fig.cap = "Probabilidad (en gris) que el Z-score esté concentrado en el intervalo [-1,1].", fig.pos="h", out.width='.6\\linewidth', echo=FALSE}
+# par(bg="honeydew")
+x <- seq(-5,5, by = 0.05)
+y <- dnorm(x = x)
+
+# --- EXACT
+lB <- c(-qnorm(0.85),
+        -qnorm(0.975),
+        -qnorm(0.999),
+        -qnorm(0.999975)) # lB:= lower bound, límite inferior o límite izquierdo
+
+uB <- c(qnorm(0.85),
+        qnorm(0.975),
+        qnorm(0.999),
+        qnorm(0.999975)) # uB:= upper bound, límite superior o límite derecho
+
+# --- 1sigma, aprox 68.26% (1-2*pnorm(-1)) de 
+# --- la probabilidad total
+# --- está concentrada en esta región
+xz1 <- x
+xz1[x >= uB[1]] <- NA
+xz1[x <= lB[1]] <- NA
+
+yz1 <- y
+yz1[x >= uB[1]] <- NA
+yz1[x <= lB[1]] <- NA
+
+# ----
+# --- PRESTAR atención a los colores
+
+myPal <- brewer.pal('RdYlGn', n=8)
+
+yRan <- range(y,yz1,na.rm = T)
+
+plot(x, y, type = "l", col = "red", lwd = 3,
+     ylab = "", xlab = "", main = "",
+     ylim=yRan)
+
+# --- 1sigma region
+a <- x[!is.na(yz1)]
+b <- yz1[!is.na(yz1)]
+
+polygon(x=c(a[21:41],rev(a[21:41])),
+        y=c(b[21:41],rep(0,21)),
+        col = "lightgray", border = NA)
+
+polygon(x=c(a[1:21],rev(a[1:21])),
+        y=c(b[1:21],rep(0,21)),
+        col = "lightgray", border = NA)
+```
+
+Similarmente, podemos calcular la probabilidad que $X_i$ esté alejado
+de $\mu$ hasta 2, 3, etc. desviaciones estándar:
+
+\begin{align*}
+  \bs{P}\{ | X_1 - \mu | \leq 2\sigma \}
+  &=
+  1 - 2 \bs{P}\{Z \leq -2\} = 0.9544997\\
+  \bs{P}\{ | X_1 - \mu | \leq 3\sigma \}
+  &=
+  1 - 2 \bs{P}\{Z \leq -3\} = 0.9973002\\
+  &\vdots\\
+  \bs{P}\{ | X_1 - \mu | \leq n\sigma \}
+  &=
+  1 - 2 \bs{P}\{Z \leq -n\}.
+\end{align*}
+
+A partir de estos cálculos es evidente que mientras más ancho es el intervalo
+que concentra los valores del $Z$-score más grande será la masa de probabilidad. 
+De modo inverso, mientras más ancho es el intervalo alrededor de $Z$, más pequeña es la probabilidad de la región _complementaria_ al intervalo. Por ejemplo, la región $3\sigma$, es decir el conjunto donde $\{ | X_1 - \mu | \leq 3 \sigma \} = \{ | Z | \leq 3 \}$ tiene probabilidad igual a 0.9973, lo cual significa que la probabilidad que $X_i$ esté fuera de la región $3\sigma$ es igual a 0.002699.^[Por completitud, registremos que la región complementaria de la región $3\sigma$ es aquel conjunto en donde $X_i$ está (en valor absoluto) alejado de su media al menos 3 desviaciones estándar.]
+
+## Una prueba de hipótesis para las anomalías de la vegetación
+
+Si bien los cálculos de la sección anterior dependen fuertemente del supuesto
+de normalidad de las variables aleatorias, estos cálculos nos permiten mejorar
+nuestro entendimiento de las anomalías en una serie de tiempo de productos satelitales. Por ejemplo, consideremos un píxel del NDVI de Cerro Mohinora y calculemos sus anomalías estandarizadas.
+
+Usemos la notación $\bs{y}=(y_1,y_2,\ldots, y_{552})$ para referirnos a la
+serie de tiempo de NDVI de un píxel genérico en Cerro Mohinora. En correspondencia 
+con lo discutido en la sección anterior, supongamos que $\bs{y}$ contiene observaciones
+distribuidas de acuerdo al modelo de probabilidad normal. A partir de nuestro modelo
+de imputación por climatología sabemos que la variabilidad en esta serie de tiempo
+de NDVI depende de la fecha de adquisición de las imágenes. Por lo tanto, para intentar satisfacer
+el supuesto que las observaciones tienen la misma media y desviación estándar, 
+debemos agrupar por fecha de adquisición las observaciones en $\bs{y}$. Por ejemplo, para la primera fecha debemos
+considerar las observaciones $(y_1, y_{24}, y_{47}, y_{530})$ y a partir de éstas
+calcular las anomalías
+\[
+  {z}_{i}
+  =
+  (y_i-\hat{\mu}_1)/\hat{\sigma}_1,\quad i=1,24,47,\ldots,530,
+\]
+en donde $\hat{\mu}_1$ y $\hat{\sigma}_1$ son, respectivamente, el promedio aritmético y la desviación estándar de las observaciones $(y_{1+23\cdot k})$ donde $k=0,1,\ldots,23$.
+
+Observe que a partir de estas anomalías estandarizadas de la primera fecha
+podemos proponer la siguiente prueba de hipótesis: Bajo el supuesto
+de normalidad e igualdad de media y desviación estándar 
+entonces 
+\[
+  H_0 : Y_{1 + 23 \cdot k } \sim N(\mu_1, \sigma_1),
+\]
+donde $k=0,1,\ldots,23$.
+
+Bajo $H_0$, para cualquier valor de $k$, $Z=(Y_{1 + 23 \cdot k} - \mu_1)/\sigma_1$
+tiene una distribución normal con media 0 y varianza 1, el estadístico
+de prueba es el mismo $Z$-score y el p-valor es igual al máximo de 
+las probabilidades $\bs{P}\{ |Z| > |z_{1+23 \cdot k}| \}=2\bs{P}\{ -|z_{1+23 \cdot k}| \}$ 
+con $k=0,1,\ldots,23$.
+
+Observe que si el máximo de los $|z_i|$ es tal que $|z_i| > 2$, entonces 
+el $p$-valor de $H_0$ es menor que
+\[
+  \bs{P} \{ Z > |z_i| \} \leq 0.0455.
+\]
+En este caso, podemos rechazar la hipótesis nula al nivel de significancia $\alpha=0.05$. El evento descrito en estas líneas pertenece a las regiones _extremas_ coloreadas con tonos más fuertes en la Figura \@ref(fig:coloredNormal).
+
+En la Figura \@ref(fig:coloredNormal) presentamos las áreas de una, dos y tres
+$\sigma$s dividiéndolas por el signo de la anomalía. Es decir, en la zona de una
+desviación estándar tenemos valores negativos ($-\sigma \leq X_i - \mu \leq 0$)
+y positivos ($0 \leq X_i - \mu \leq \sigma$) de la anomalía. En la parte negativa de la región $\sigma$ están concentrados valores que son menores que la media $\mu$; en el caso 
+de un índice de vegetación, si en una fecha el valor del índice se encuentra
+en esta región, entonces podemos inferir que para esa fecha el verdor está por
+debajo de su valor promedio (histórico). Una interpretación similar aplica para la
+parte positiva de la región $\sigma$.
+
+```{r coloredNormal, fig.cap = "Probabilidades de las zonas de una, dos y tres desviaciones estándar, clasificadas por anomalía positiva y negativa, en la normal con media 0 y varianza 1. Los tonos verdes representan áreas en donde la anomalía estandarizada es positiva, mientras que las áreas con anomalía negativa están coloreadas con tonos no verdes.", fig.pos="h", out.width='.8\\linewidth', echo=FALSE}
+x <- seq(-5,5, by = 0.05)
+y <- dnorm(x = x)
+
+# --- APROX
+lB <- c(-1,-2,-3,-4) # lB:= lower bound, límite inferior o límite izquierdo
+uB <- c(1,2,3,4) # uB:= upper bouund, límite superior o límite derecho
+
+# --- 1sigma, aprox 68.26% (qnorm(0.85);) de 
+# --- la probabilidad total
+# --- está concentrada en esta región
+xz1 <- x
+xz1[x > uB[1]] <- NA
+xz1[x < lB[1]] <- NA
+
+yz1 <- y
+yz1[x > uB[1]] <- NA
+yz1[x < lB[1]] <- NA
+
+# --- 2 sigma, aprox 97.5% (qnorm(0.975);) de 
+# --- la probabilidad total
+# --- está concentrada en esta región
+xz2 <- x
+xz2[x > uB[2]] <- NA
+xz2[x < lB[2]] <- NA
+
+yz2 <- y
+yz2[x > uB[2]] <- NA
+yz2[x < lB[2]] <- NA
+
+# --- 3 sigma, aprox 99.9% (qnorm(0.999);) de 
+# --- la probabilidad total
+# --- está concentrada en esta región
+xz3 <- x
+xz3[x > uB[3]] <- NA
+xz3[x < lB[3]] <- NA
+
+yz3 <- y
+yz3[x > uB[3]] <- NA
+yz3[x < lB[3]] <- NA
+
+
+myPal <- brewer.pal('RdYlGn', n=8)
+
+yRan <- range(y,yz1,yz2,yz3,na.rm = T)
+
+plot(x, y, type = "l", col = "red", lwd = 3,
+     ylab = "", xlab = "", main = "",
+     ylim=yRan)
+
+# --- 1sigma region
+a <- x[!is.na(yz1)]
+b <- yz1[!is.na(yz1)]
+
+polygon(x=c(a[21:41],rev(a[21:41])),
+        y=c(b[21:41],rep(0,21)),
+        col = myPal[5], border = NA)
+
+polygon(x=c(a[1:21],rev(a[1:21])),
+        y=c(b[1:21],rep(0,21)),
+        col = myPal[4], border = NA)
+
+# --- 2sigma region
+a2 <- x[!is.na(yz2)]
+b2 <- yz2[!is.na(yz2)]
+
+polygon(x=c(a2[61:81],rev(a2[61:81])),
+        y=c(b2[61:81],rep(0,21)),
+        col = myPal[6], border = NA)
+
+polygon(x=c(a2[1:21],rev(a2[1:21])),
+        y=c(b2[1:21],rep(0,21)),
+        col = myPal[3], border = NA)
+
+# --- 3sigma region
+a3 <- x[!is.na(yz3)]
+b3 <- yz3[!is.na(yz3)]
+
+polygon(x=c(a3[101:121],rev(a3[101:121])),
+        y=c(b3[101:121],rep(0,21)),
+        col = myPal[7], border = NA)
+
+polygon(x=c(a3[1:21],rev(a3[1:21])),
+        y=c(b3[1:21],rep(0,21)),
+        col = myPal[2], border = NA)
+
+legend("topright",
+       legend  = c("2.14%", "13.59%", "34.13%", "34.13%", "13.59%", "2.14%"),
+       col=myPal[c(7,6,5,4,3,2)], fill = myPal[c(7,6,5,4,3,2)],
+       border = myPal[c(7,6,5,4,3,2)], bty="n", cex=1.75)
+```
+
+## Coloreando anomalías
+
+La Figura \@ref(fig:mohinora-anomalies) muestra el cálculo de anomalías estandarizadas
+de NDVI para un píxel dentro de Cerro Mohinora. Las líneas horizontales en esta figura
+marcan los límites de las regiones de una, dos y tres $\sigma$s; los colores de estas
+líneas son los mismos que utilizamos en la presentación de la Figura \ref(coloredNormal).
+A partir de esta figura podemos identificar algunas anomalías claramente fuera de 
+la región $3\sigma$ en 2003, 2005 y del 2013 al 2018.
+
+
+```{r mohinora-anomalies, fig.width=5, fig.height=5, fig.cap = "Anomalías estandarizadas de la serie de timepo de NDVI para un píxel de Cerro Mohinora. Las líneas horizontales coloreadas marcan los límites de las regiones de una, dos y tres desviaciones estándar.", fig.pos="h", out.width='.8\\linewidth'}
+mohinora_DATA_interpol_rTp <- LoadToEnvironment(mohinoraFILES[1])$mohinora_DATA_interpol_rTp
+pixel_coords <- 1309
+pixel_mat <- get_pixel_matrix(mohinora_DATA_interpol_rTp$values[pixel_coords,])
+
+# --- promedio por fecha de adquisicion
+mu <- apply(pixel_mat, 2, mean)
+
+# --- desviacion estándar por fecha de adquisicion
+sigma <- apply(pixel_mat, 2, sd)
+
+# --- anomalias estandarizadas
+anomalia <- (pixel_mat - mu)/sigma
+
+# --- obj anomalia como un obj 'ts'
+anomalia_ts <- ts(c(t(anomalia)), 
+                  start = c(2000,1), 
+                  end = c(2023,23),
+                  frequency = 23)
+
+# --- PRESTAR atención a los colores
+# --- ligar las líneas de abajo con las
+# --- regiones de probabilidades definidas a partir
+# --- de la densidad normal
+
+plot(anomalia_ts, ylab="")
+abline(h=1, col=myPal[5], lwd=3) # una desviación estándar
+abline(h=-1, col=myPal[4], lwd=3) 
+
+abline(h=2, col=myPal[6], lwd=3) # 2 desviaciones estándar
+abline(h=-2, col=myPal[3], lwd=3)
+
+abline(h=3, col=myPal[7], lwd=3) # 3 desviaciones estándar
+abline(h=-3, col=myPal[2], lwd=3)
+```
+
+
+
+
+

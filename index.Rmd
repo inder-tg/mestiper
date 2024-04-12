@@ -14,7 +14,7 @@ urlcolor: blue
 #   - usepackage{amsmath, mathrsfs}
 output: 
   bookdown::gitbook: 
-    split_by: section
+    split_by: section+number
 site: bookdown::bookdown_site
 description: "This is more than a test"
 ---
@@ -47,26 +47,25 @@ out
 library(sta)
 library(changepoint)
 library(bfast)
-library(sephora)
+# library(sephora)
 
 source(paste0(getwd(),"/Rscripts/funciones_auxiliares.R"))
 
-mohinoraFILES <- list.files(path = paste0(getwd(),"/data/mohinora"),                        # /Users/inder/OneDrive/Desktop/mestiper/data/mohinora",
-                            pattern = ".RData",
-                            full.names = TRUE)
+mohinoraFILES <- list.files(path = paste0(getwd(),"/RData/mohinora"),
+                            pattern = ".RData", full.names = TRUE)
 
-mohinora_2000001 <- LoadToEnvironment(mohinoraFILES[1])$df_layer1
-mohinora_2000017 <- LoadToEnvironment(mohinoraFILES[2])$df_layer2
-mohinora_2000033 <- LoadToEnvironment(mohinoraFILES[3])$df_layer3
-mohinora_2000_2009 <- LoadToEnvironment(mohinoraFILES[4])$mohinora_NDVI_rTp
-  
-mohinora <- list()
-mohinora$coords <- mohinora_2000001[,1:2]
-mohinora$values <- matrix(nrow=nrow(mohinora_2000001), ncol=10*23)
-mohinora$values[,1] <- mohinora_2000001[,3]
-mohinora$values[,2] <- mohinora_2000017[,3]
-mohinora$values[,3] <- mohinora_2000033[,3]
-mohinora$values[,4:230] <- mohinora_2000_2009[,3:229]
+# mohinora_2000001 <- LoadToEnvironment(mohinoraFILES[1])$df_layer1
+# mohinora_2000017 <- LoadToEnvironment(mohinoraFILES[2])$df_layer2
+# mohinora_2000033 <- LoadToEnvironment(mohinoraFILES[3])$df_layer3
+# mohinora_2000_2009 <- LoadToEnvironment(mohinoraFILES[4])$mohinora_NDVI_rTp
+#   
+# mohinora <- list()
+# mohinora$coords <- mohinora_2000001[,1:2]
+# mohinora$values <- matrix(nrow=nrow(mohinora_2000001), ncol=10*23)
+# mohinora$values[,1] <- mohinora_2000001[,3]
+# mohinora$values[,2] <- mohinora_2000017[,3]
+# mohinora$values[,3] <- mohinora_2000033[,3]
+# mohinora$values[,4:230] <- mohinora_2000_2009[,3:229]
 
 getSD <- function(m){
   v <- numeric(nrow(m))

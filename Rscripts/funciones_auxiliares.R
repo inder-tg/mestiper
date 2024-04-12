@@ -96,7 +96,7 @@ tomaCartaMazo2 <- function(...){
 
 # --- interpolation hybrid method
 
-get_pixel_matrix <- function(x,lenPeriod){
+get_pixel_matrix <- function(x,lenPeriod=23){
   output <- matrix(nrow=length(x)/lenPeriod, ncol=lenPeriod)
   
   for(i in seq_len(nrow(output))){
@@ -104,6 +104,7 @@ get_pixel_matrix <- function(x,lenPeriod){
   }
   output
 }
+
 
 # NOTE: for this to work, length(x) must be a multiple of lenPeriod
 climatology <- function(x, lenPeriod){
