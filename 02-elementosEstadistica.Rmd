@@ -243,7 +243,7 @@ Límite Central**
 </div>
 
 
-## Prueba de hipótesis y p-valor
+## Prueba de hipótesis y p-valor {#test}
 
 La historia hasta ahora. En el capítulo anterior aprendimos la importancia del
 teorema de límite central o ¿porqué solemos calcular el promedio aritmético (media)

@@ -115,6 +115,10 @@ vecToMatrix <- function (x, lenPeriod = 23) {
 \newcommand{\argMin}{\msf{argmin}}
 \newcommand{\what}[1]{\widehat{#1}}
 
+\newcommand{\ME}{\msf{E}}
+\newcommand{\MSE}{\msf{MSE}}
+
+
 # Prefacio {-}
 
 ... cuando estemos cerca de finalizar esta obra escribiremos esta entrada.

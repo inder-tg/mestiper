@@ -1,4 +1,4 @@
-
+  
 # Análisis de tendencias {#trendAnalysis}
 
 En esta sección vamos a discutir algunas herramientas estadísticas para analizar

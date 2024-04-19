@@ -29,7 +29,7 @@ en esta sección.
 
 El paquete ```sta``` contiene el vector ```marismas``` el cual presenta observaciones
 del índice de humedad de diferencia normalizada (**NDMI**) tomadas en algún punto del Área
-Natural Protegida Marismas durante el periodo 2000-2018, véase la Figura \@ref(fig:marismas).
+Natural Protegida _Marismas Nacionales_ durante el periodo 2000-2018, véase la Figura \@ref(fig:marismas).
 
 ```{r marismas, echo=FALSE, fig.width=5, fig.height=4, fig.cap = "Serie de tiempo de compuestos a 10 días del NDMI registrada en Marismas Nacionales, México, durante el periodo 2000-2018.", fig.pos="h", out.width='.6\\linewidth'}
 marismas_ts <- ts(marismas, start=c(2000,1), end=c(2018,36),
@@ -38,7 +38,7 @@ marismas_ts <- ts(marismas, start=c(2000,1), end=c(2018,36),
 plot(marismas_ts, ylab="NDMI")
 ```
 
-A largo plazo podemos apreciar la dinámica periódica de este NDMI. Por el momento
+A largo plazo podemos apreciar la dinámica periódica de este NDMI. A corto plazo, 
 concentrémonos en algún año específico, digamos el año 2000.
 
 ```{r marismas2000, echo=FALSE}
@@ -85,7 +85,7 @@ de cualquiera de estos suavizadores. Sin embargo, podemos explotar la estructura
 local de las observaciones y aplicar un modelo estadístico a partir del cual realizar
 _inferencias_ es una tarea sencilla.
 
-## Regresión armónica
+## Regresión armónica {#harmReg}
 
 El modelo de regresión armónica es un caso particular del modelo de regresión
 lineal por lo que la siguiente discusión sobre la estimación, técnicas de diagnóstico, inferencia y predicción de este modelo están basadas en ideas generales aplicables a cualquier modelo de regresión lineal. 
@@ -100,28 +100,34 @@ características de observaciones de NDVI.
 Escribiremos $y_t$ para denotar el valor del NDVI al tiempo t. 
 Ajustar el modelo de regresión armónica a una serie de $L$ observaciones 
 NDVI consiste en estimar los parámetros en la siguiente representación:
+\[
+  y_t = f(t) + \varepsilon_t, \quad t = 1,\ldots, L,
+\]
+donde
 \begin{align}
-  y_t &= a_0 + 
+  f(t) &= a_0 + 
   \sum_{j=1}^p\,
   \left( a_j \, \cos \left( \frac{2\pi jt}{L} \right) + 
-  b_j \, \sin \left( \frac{2\pi jt}{L} \right) \right) +
-  \varepsilon_t (\#eq:harmReg-original)\\
+  b_j \, \sin \left( \frac{2\pi jt}{L} \right) \right) (\#eq:harmReg-original)\\
   &=
   c_0 +
-  \sum_{j=1}^p\,c_j\,\cos\left( \frac{2\pi \, jt}{L} - \varphi_j \right) + \varepsilon_t,
-  \quad
-  t = 1,\ldots, L. (\#eq:harmReg)
+  \sum_{j=1}^p\,c_j\,\cos\left( \frac{2\pi \, jt}{L} - \varphi_j \right), (\#eq:harmReg)
 \end{align}
-La ecuación \@ref(eq:harmReg) se obtiene haciendo uso de igualdades trigonométricas, un poco de álgebra y definiedo $c_j=\sqrt{ a_j^2 + b_j^2 }$, $\varphi_j=\mbox{arctn}(b_j/a_j)$. Posteriormente discutiremos
-las aplicaciones de esta ecuación, en lo que sigue nos 
-concentraremos en la Ec. \@ref(eq:harmReg-original). El término $\varepsilon_t$
-simboliza el error de medición al tiempo $t$. Este error se supone _aleatorio_ y
-en esta sección consideramos que $\varepsilon_t \sim \msc{N}(0,\sigma^2)$.
+y el término $\varepsilon_t$ simboliza el error de medición al tiempo $t$. Este error 
+se supone _aleatorio_ y en esta sección consideramos que $\varepsilon_t \sim \msc{N}(0,\sigma^2)$.
 
-Los parámetros en \@ref(eq:harmReg-original) son las $a_j$s, $b_j$s y $p$. Si bien existen técnicas de análisis armónico para determinar un valor de $p$, aquí usaremos la evidencia empírica sobre este parámetro y haremos $p=2$. Es decir, la regresión armónica empleada en esta sección utiliza 3 armónicos (el armónico cero dá lugar al parámetro $a_0$). ¿Cómo estimamos las $a_j$s y $b_j$s?
+La ecuación \@ref(eq:harmReg) se obtiene haciendo uso de igualdades trigonométricas, un poco de álgebra y definiedo $c_j=\sqrt{ a_j^2 + b_j^2 }$, $\varphi_j=\mbox{arctn}(b_j/a_j)$. Posteriormente discutiremos las aplicaciones de esta ecuación, en lo que sigue nos 
+concentraremos en la Ec. \@ref(eq:harmReg-original). 
+
+<!-- Típicamente, los valores $c_j$ y $\varphi_j$ son llamados _amplitud_ y _ángulo de fase_. -->
+<!-- Muchos estudios de NDVI han usado el supuesto $\sigma_t^2=\sigma^2$ -para todo $t$- -->
+<!-- para modelar los errores. Además, es común usar $p=3$ or $p=4$, cf. @Eastman.etal.2009,  -->
+<!-- para ajustar la función de regresión. -->
+
+Los parámetros en \@ref(eq:harmReg-original) son las $a_j$s, $b_j$s y $p$. Si bien existen técnicas de para determinar un valor de $p$ (**selección de modelo**), en esta sección usaremos $p=2$. Es decir, la regresión armónica empleada en esta sección utiliza 3 armónicos (el armónico cero dá lugar al parámetro $a_0$). ¿Cómo estimamos las $a_j$s y $b_j$s?
 
 Observa que podemos utilizar algebra matricial para representar las $L$ 
-observaciones de NDVI:
+observaciones de NDVI de la siguiente forma:
 \begin{equation}
   \begin{pmatrix}
     y_1 \\ y_2 \\ \vdots \\ y_L
@@ -189,7 +195,8 @@ de optimización:
 \begin{equation}
   \hat{\bs{\beta}} = \argMin_{\bs{\vartheta}\in \R^5}\,
   \left( \bs{y} - \bs{X}\,\bs{\vartheta} \right)^\top\,
-  \left( \bs{y} - \bs{X}\,\bs{\vartheta} \right).
+  \left( \bs{y} - \bs{X}\,\bs{\vartheta} \right)
+  = \argMin_{\bs{\vartheta}\in \R^5}\, \| \bs{y} - \bs{X}\,\bs{\vartheta} \|^2.
 \end{equation}
 Esto debe leerse como _$\hat{\bs{\beta}}$ es el vector $\bs{\vartheta}$ 
 que minimiza la norma cuadrada de la diferencia entre los vectores $\bs{y}$ y $\bs{X}\bs{\vartheta}$ para todos los posibles valores de $\bs{\vartheta}$ 
@@ -223,26 +230,25 @@ que el valor de $p$ sea moderadamente grande; típicamente $p=L$ produce
 resultados adecuados.
 
 ```{r haRmonics-aux, echo=FALSE}
-set.seed(10)
-SAMPLE <- sample(1:nrow(mohinora$values), 1)
-set.seed(NULL)
+# set.seed(10)
+SAMPLE <- 1975 # sample(1:nrow(mohinora$values), 1)
+# set.seed(NULL)
 
-y <- mohinora$values[SAMPLE,]
+y <- mohinora_DATA_interpol_rTp$values[SAMPLE,]
 yMat <- vecToMatrix(y,23)
 z <- c(t(yMat)) * 1e-4
 y <- y * 1e-4
-ts_y <- ts(y, start = c(2000, 1), end = c(2009, 23), frequency = 23)
+ts_y <- ts(y, start = c(2000, 1), end = c(2023, 23), frequency = 23)
 
 ```
 
 Abajo mostramos el ajuste vía regresión armónica de un píxel de NDVI registrado
-en la APFF Cerro Mohinora en Chihuahua, México. El periodo estudiado comprende
-Enero 1, 2000 a Diciembre 31, 2009. El ajuste fue producido por la función 
-```haRmonics``` del paquete ```geoTS```.
+en el Área de Protección de Flora y Fauna _Cerro Mohinora_ en Chihuahua, México. 
+El periodo estudiado comprende Enero 1, 2000 a Diciembre 31, 2023. El ajuste fue producido por la función ```haRmonics``` del paquete ```geoTS```.
 
 ::: {.tiny}
-```{r haRmonics, echo=c(1:5, 9:26), fig.cap="Ajuste de NDVI (2000-2009) vía regresión armónica con 2 frecuencias.", fig.align='center'}
-N <- 10 # Años estudiados
+```{r haRmonics, echo=c(1:5, 9:26), fig.cap="Ajuste de NDVI (2000-2023) vía regresión armónica con 2 frecuencias.", fig.align='center'}
+N <- 24 # Años estudiados
 L <- 23 # Total de observaciones por año
 
 fit <- numeric(N * L) 
@@ -253,7 +259,7 @@ for(i in 1:N){ # z es un vector con mediciones NDVI
   fit[((i-1)*L + 1):(i*L)] <- temp$fitted
 }
 
-ts_fit <- ts(fit, start = c(2000, 1), end = c(2009,23), frequency = L)
+ts_fit <- ts(fit, start = c(2000, 1), end = c(2023,23), frequency = L)
 
 par(mar=c(0,4,0,0))
 plot(0,0, type="n", bty="n", xaxt="n", yaxt="n", ylab="")
@@ -267,7 +273,9 @@ ts.plot(ts_y, ts_fit, col=c("blue", "red"))
 
 :::
 
-### Inferencia estadística
+## Inferencia estadística
+
+### Técnicas de diagnóstico
 
 ### Bandas de confianza
 
@@ -310,7 +318,7 @@ nFreq <- 2
 mat <- getDesignMat(numFreq = nFreq)
 w <- getSD(mat)
 
-for(i in 1:10){
+for(i in 1:N){
   r <- ((i-1)*L + 1):(i*L)
   
   temp <- haRmonics(y=z[r], method="harmR", numFreq=2, delta=0)
@@ -324,9 +332,9 @@ for(i in 1:10){
   cbands_lower[r] <- fit[r] - sigma * sqrt(w) * qnorm(1-(0.05)/2)
 }
 
-ts_fit <- ts(fit, start = c(2000, 1), end = c(2009, 23), frequency = L)
-ts_cb_upper <- ts(cbands_upper, start = c(2000, 1), end = c(2009, 23), frequency = L)
-ts_cb_lower <- ts(cbands_lower, start = c(2000, 1), end = c(2009, 23), frequency = L)
+ts_fit <- ts(fit, start = c(2000, 1), end = c(2023, 23), frequency = L)
+ts_cb_upper <- ts(cbands_upper, start = c(2000, 1), end = c(2023, 23), frequency = L)
+ts_cb_lower <- ts(cbands_lower, start = c(2000, 1), end = c(2023, 23), frequency = L)
 
 par(mar=c(0,4,0,0))
 plot(0,0, type="n", bty="n", xaxt="n", yaxt="n", ylab="")
@@ -486,73 +494,139 @@ calculada cubre (marginalmente) el valor real del NDVI de la primera fecha de 20
 <!-- en las secciones anteriores. Todos los predictores corresponden al mismo píxel analizado en las secciones anteriores. Los predictores son: -->
 
 
+## Selección de modelo
 
-<!-- ## Regresión armónica y selección de modelo -->
+Hasta este punto hemos aplicado el modelo de regresión armónica suponiendo que
+la varianza de la variable de interés, NDVI, es constante a lo largo del tiempo.
+Esta característica suele denominarse _homoscedásticidad_ en los errores del modelo. 
+Adicionalmente, hemos empleado
+este modelo utilizando un número arbitrario de armónicos, $p=2$. De acuerdo a la
+sección anterior, aún con estas limitantes el modelo de regresión armónica con errores
+homoscedástico muestra ser útil para labores tales como la predicción.
+En esta sección discutiremos el modelo de regresión armónica con errores _heteroscedásticos_
+y presentaremos algunas ideas generales para seleccionar cuantitativamente el _mejor_ 
+modelo.
 
-<!-- En una nota anterior presentamos el modelo de regresión armónica con errores -->
-<!-- cuya variabilidad es constante y discutimos criterios empíricos para decidir -->
-<!-- el número de frecuencias/armónicos utilizados en el ajuste de este modelo a datos -->
-<!-- de NDVI. En esta sección consideramos el mismo modelo de regresión suponiendo que los errores son heteroscedásticos y presentamos el criterio de información de Akaike (AIC en -->
-<!-- inglés) el cual nos permite seleccionar el modelo con el mejor balance entre -->
-<!-- el número de parámetros y la verosimilitud. -->
+### Heteroscedasticidad en el modelo de regresión armónica
 
-<!-- Usemos $y_t$ para denotar el valor del NDVI al tiempo $t$ y consideremos el siguiente modelo -->
-<!-- \begin{equation} -->
-<!--     y_{t} = f(t) + \varepsilon_t,\qquad t=1,\ldots,L, (\#eq:WLS-HR) -->
-<!-- \end{equation} -->
-<!-- donde $f$ denota una función que definiremos abajo y suponemos que los errores $\varepsilon_t$ son normales con media cero y varianza $\sigma_t^2$, es decir la varianza toma valores distintos en cada punto del tiempo. -->
+En la sección \@ref(harmReg) presentamos el modelo de regresión armónica con errores
+cuya variabilidad es constante (homoscedástico) y discutimos criterios empíricos para decidir
+el número de frecuencias/armónicos utilizados en el ajuste de este modelo a datos
+de NDVI. Este modelo, sin embargo, parece quedar corto para describir la dinámica
+a largo plazo del NDVI.
 
-<!-- Consideramos que el modelo de regresión armónica con errores heteroscedásticos -->
-<!-- intenta describir mejor la dinámica anual del NDVI. Por ejemplo, en el folder -->
-<!-- ```/data/phenoParams``` tenemos un dataset con 128 píxeles de NDVI, al tomar  -->
-<!-- cualquiera de estos píxeles y graficar su curva de climatología observamos  -->
-<!-- características  distintas a lo largo de los 23 días del año (DOY en inglés): -->
+En efecto, consideremos la curva de climatología de una serie de tiempo de NDVI en 
+Cerro Mohinora:
 
-<!-- ```{r shape-climatology, fig.width=5, fig.height=4, fig.cap = "Curva de climatología.", fig.pos="h", out.width='.6\\linewidth', echo=FALSE} -->
-<!-- path_polygons <- paste0(getwd(), "/data/phenoParams/polygons") -->
+```{r shape-climatology, fig.width=5, fig.height=4, fig.cap = "Curva de climatología de NDVI en un píxel arbitrario de Cerro Mohinora.", fig.pos="h", out.width='.6\\linewidth', echo=FALSE}
 
-<!-- listFiles_polygons <- list.files(path=path_polygons, -->
-<!--                                  pattern=".RData", -->
-<!--                                  full.names=TRUE) -->
+pixel <- mohinora_DATA_interpol_rTp$values[pixel_coords,]
 
-<!-- POLIGONO <- LoadToEnvironment(listFiles_polygons[1])$poly[[1]] * 1e-4 -->
+pixel_climatology <- climatology(x=pixel, lenPeriod=23)
 
-<!-- ROW <- sample(nrow(POLIGONO),1) -->
+COLORES <- c(brewer.pal(8,"YlGn")[8:5],
+             brewer.pal(9,"BuGn")[4:1],
+             brewer.pal(9,"Greens")[7:9], #3
+             brewer.pal(9,"YlGn")[9], #1
+             brewer.pal(11,"PRGn")[11:9], #3
+             brewer.pal(9,"Greens")[7:9], #3
+             brewer.pal(9,"BuGn")[9:5])
 
-<!-- pixel_climatology <- climatology(x=POLIGONO[ROW,], lenPeriod=23) -->
+par(mar=c(4,3,1,2))
+boxplot(pixel_climatology$matrix, col=COLORES)
+```
 
-<!-- COLORES <- c(brewer.pal(8,"YlGn")[8:5], -->
-<!--              brewer.pal(9,"BuGn")[4:1], -->
-<!--              brewer.pal(9,"Greens")[7:9], #3 -->
-<!--              brewer.pal(9,"YlGn")[9], #1 -->
-<!--              brewer.pal(11,"PRGn")[11:9], #3 -->
-<!--              brewer.pal(9,"Greens")[7:9], #3 -->
-<!--              brewer.pal(9,"BuGn")[9:5]) -->
-
-<!-- par(mar=c(4,3,1,2)) -->
-<!-- boxplot(pixel_climatology$matrix, col=COLORES) -->
-<!-- ``` -->
+A partir de la Figura \@ref(fig:shape-climatology), es evidente que la variabilidad 
+del NDVI provenientes de la primera fecha de adquisición es diferente 
+a la de los valores de la fecha once, similarmente, la variabilidad de la fecha 
+diez es diferente a la de la fecha diecinueve. A continuación, mostramos como adaptar 
+el modelo de regresión armónica a este escenario realista en el cual la varianza 
+de las observaciones varía en el tiempo.
 
 <!-- En particular, las varianzas de cada boxplot son considerablemente distintas -la -->
 <!-- diferencia entre alguna de ellas alcanza un orden de magnitud- lo cual sustenta -->
 <!-- la heteroscedasticidad de los errores en el modelo \@ref(eq:WLS-HR). -->
 
-<!-- ```{r var-climatology, echo¿FALSE} -->
-<!-- apply(pixel_climatology$matrix, 2, sd) -->
-<!-- ``` -->
+Usemos $y_t$ para denotar el valor del NDVI al tiempo $t$ y consideremos el siguiente modelo
+\begin{equation}
+    y_{t} = f(t) + \varepsilon_t, \qquad t=1,\ldots,L, (\#eq:WLS-HR)
+\end{equation}
+donde $f$ denota la función definida en \@ref(eq:harmReg-original)
+y suponemos que los errores $\varepsilon_t$ son normales con media cero y varianza $\sigma_t^2$, 
+es decir la varianza tomará un valor distinto en cada punto del tiempo.
+Consideramos que el modelo \@ref(eq:WLS-HR) describe mejor la dinámica anual del NDVI. 
+
+```{r var-climatology, echo=FALSE, include=FALSE, eval=FALSE}
+apply(pixel_climatology$matrix, 2, sd)
+```
+
+De manera general, los parámetros $\sigma_t$, $t=1,\ldots,L$, ahora forman parte
+del modelo \@ref(eq:WLS-HR) y como tal, deben ser estimados. Una manera sencilla
+de estimar los valores de las $\sigma_t$'s es a través del uso de las distribuciones
+de NDVI por fecha de adquisición. Es decir, a partir de la curva de climatología,
+es posible obtener un estimador $\hat{\sigma}_t$ para cada $t$. Por ejemplo, 
+se puede usar la mediana de la distribución, $\hat{\sigma}_t = \mbox{mediana}\{ y_{t + 23 \cdot k } \mid k=0,1,\ldots,23\}$, $t=1,\ldots,L$.
+
+La estimación de los parámetros restantes del modelo es similar a la del caso
+homoscedástico. Iniciamos notando que a partir de la Ec. \@ref(eq:harmReg-mat), sabemos que 
+el modelo de regresión armónica heteroscedástica puede escribirse en forma matricial
+con la diferencia que el vector de errores 
+$\bs{\varepsilon}=\msc{N}(\bs{0},\bs{\Sigma})$ y $\bs{\Sigma}=\mbox{diagonal}(\sigma_1^2,\ldots,\sigma_L^2)$.^[En el modelo homoscedástico $\bs{\varepsilon}=\msc{N}(\bs{0},\sigma^2\,\bs{I}_L)$, donde $\bs{I}_L$ denota la matriz identidad de dimensiones $L \times L$.]
+
+
+<!-- \[ -->
+<!--     \bs{y} = \bs{X}\,\bs{\beta} + \bs{\varepsilon}, -->
+<!-- \] -->
+<!-- donde $\bs{y}=(y_1,\ldots,y_L)$, $\bs{X}$ es la matriz $(L\times (2p+1))$ de diseño -->
+<!-- cuyo $\ell$-ésimo renglón está dado por -->
+<!-- \[ -->
+<!--   \bs{X}[\ell,] -->
+<!--   = -->
+<!--     \begin{pmatrix} -->
+<!--     1 & \cos( \ell (2\pi)/L ) & \sin( \ell (2\pi)/L ) & \cdots  \cos( \ell (2\pi\, p)/L ) & \sin( \ell (2\pi\, p)/L ) -->
+<!--     \end{pmatrix}, -->
+<!-- \] -->
+<!-- y $\bs{\varepsilon}=\msc{N}(\bs{0},\bs{\Sigma})$, $\bs{\Sigma}=\mbox{diagonal}(\sigma_1^2,\ldots,\sigma_L^2)$. -->
+
+Aplicando la siguiente transformación,
+$\bs{y}^\ast=\bs{\Sigma}^{-1/2}\,\bs{y}$, $\bs{X}^\ast = \bs{\Sigma}^{-1/2}\,\bs{X}$
+y $\bs{\varepsilon}^\ast = \bs{\Sigma}^{-1/2}\,\bs{\varepsilon}$, ahora tenemos
+la representación
+\[
+  \bs{y}^\ast
+  =
+  \bs{X}^\ast\,\bs{\beta} + \bs{\varepsilon}^\ast,
+\]
+donde, utilizando propiedades de la varianza de una transformación lineal, es 
+fácil convencerse que la varianza de $\bs{\varepsilon}^\ast$ es igual a la matriz 
+identidad de dimensiones $L \times L$. Esta característica nos permite utilizar 
+la solución por mínimos cuadrados en el actual problema. A saber, en el modelo de 
+regresión armónica heteroscedástica el vector de parámetros puede estimarse a través de:
+\begin{align*}
+  \hat{\bs{\beta}}^\ast 
+  &=
+  \left( (\bs{X}^\ast)^\top\, \bs{X}^\ast\right)^{-1}\left( (\bs{X}^\ast)^\top\, \bs{y}^\ast \right)\\
+  &=
+  \left( \bs{X}^\top\,\bs{\Sigma}^{-1}\,\bs{X} \right)^{-1}\,\bs{X}^\top\bs{\Sigma}^{-1}\,\bs{y}.
+\end{align*}
+De hecho, con la transformación $\bs{\Theta} \mapsto \bs{\Sigma}^{-1/2}\, \bs{\Theta}$
+_mapeamos_ el modelo heteroscedástico al caso homoscedástico, y por tanto podemos emplear
+la inferencia estadística desarrollada en el modelo homoscedástico en el caso 
+heteroscedástico.
+
 
 <!-- Para la función $f$ consideramos la representación -->
 <!-- \[ -->
-<!--   f(t)  -->
-<!--   =  -->
-<!--   \alpha_0  -->
-<!--   +  -->
-<!--   \sum_{j=1}^p\,\left( \alpha_j\,\cos( \frac{2\pi\,j\,t}{L} )  -->
-<!--   +  -->
+<!--   f(t) -->
+<!--   = -->
+<!--   \alpha_0 -->
+<!--   + -->
+<!--   \sum_{j=1}^p\,\left( \alpha_j\,\cos( \frac{2\pi\,j\,t}{L} ) -->
+<!--   + -->
 <!--   \beta_j\,\sin( \frac{2\pi\,j\,t}{L} )  \right) -->
 <!-- \] -->
 <!-- El valor de $L$ es determinado por el número de observaciones por año, en nuestro -->
-<!-- caso $L=23$.  -->
+<!-- caso $L=23$. -->
 
 
 <!-- Definiendo $c_j=\sqrt{\alpha_j^2 + \beta_j^2}$ y  -->
@@ -568,12 +642,6 @@ calculada cubre (marginalmente) el valor real del NDVI de la primera fecha de 20
 <!--   t=1,\ldots,L. -->
 <!-- \] -->
 
-
-<!-- Típicamente, los valores $c_j$ y $\varphi_j$ son llamados _amplitud_ y _ángulo de fase_. -->
-<!-- Muchos estudios de NDVI han usado el supuesto $\sigma_t^2=\sigma^2$ -para todo $t$- -->
-<!-- para modelar los errores. Además, es común usar $p=3$ or $p=4$, cf. @Eastman.etal.2009,  -->
-<!-- para ajustar la función de regresión. -->
-
 <!-- El modelo de regresión armónica con errores heteroscedásticos incorpora información -->
 <!-- histórica del NDVI, a través de la estimación de $\sigma_t^2$, de una manera -->
 <!-- sencilla la cual contribuye a obtener un mejor ajuste y una selección más transparente -->
@@ -581,29 +649,16 @@ calculada cubre (marginalmente) el valor real del NDVI de la primera fecha de 20
 
 ### Criterio de información de Akaike.
 
-El modelo \@ref(eq:WLS-HR) puede escribirse en forma matricial
-\[
-    \bs{Y} = \bs{X}\,\bs{\beta} + \bs{\varepsilon},
-\]
-donde $\bs{Y}=(y_1,\ldots,y_L)$, $\bs{X}$ es la matriz $(L\times (2p+1))$ de diseño
-cuyo $\ell$-ésimo renglón está dado por
-\[
-  \bs{X}[\ell,]
-  =
-    \begin{pmatrix}
-    1 & \cos( \ell (2\pi)/L ) & \sin( \ell (2\pi)/L ) & \cdots  \cos( \ell (2\pi\, p)/L ) & \sin( \ell (2\pi\, p)/L )
-    \end{pmatrix},
-\]
-y $\bs{\varepsilon}=N(\bs{0},\bs{\Sigma})$, $\bs{\Sigma}=\mbox{diagonal}(\sigma_1^2,\ldots,\sigma_L^2)$-
-A partir de esta forma de escribir el modelo, se vuelve muy sencillo presentar
-el _criterio de información de Akaike (AIC, en inglés)_ el cual nos permite comparar
-entre éste y el AIC del modelo homoscedástico estándar.
+Ahora que tenemos dos modelos para describir el comportamiento de series de tiempo
+de NDVI, emerge la pregunta ¿es posible determinar _cuantitativamente_ el mejor modelo?  
 
-Por definición, el AIC de un modelo es
+El **criterio de información de Akaike** (AIC, en inglés) es una cantidad que
+permite evaluar un modelo ajustado a partir de balancear el número de parámetros 
+y el ajuste obtenido. Por definición, el AIC de un modelo es igual a 
 \[
     AIC = 2\,\kappa - 2\,\log\msf{L}(\hat{\vartheta}),
 \]
-donde $\kappa$ es el número de parámetris del modelo y $\msf{L}$ es la función
+donde $\kappa$ es el número de parámetros del modelo y $\msf{L}$ es la función
 de verosimilitud maximizada por el parámetro $\hat{\vartheta}$. Esta cantidad
 intenta balancear la cantidad de parámetros en el modelo y la
 verosimilitud asociada a los parámetros estimados. Una vez ajustado el modelo,
@@ -613,21 +668,68 @@ estimados. Por tanto, mientras más pequeño el AIC -lo cual se debe a que
 la log-verosimilitud es grande- mejor es el modelo seleccionado en el sentido
 de balancear número de parámetros vs. plausibilidad.
 
-
-Denotemos con $\hat{\bs{\gamma}}$ y $\hat{\bs{\beta}}$
+Denotemos con $\hat{\bs{\beta}}$ y $\hat{\bs{\beta}}^\ast$
 los estimadores por mínimos cuadrados ordinarios (OLS) y mínimos cuadrados
-ponderados (WLS) de $\bs{\beta}$ en el modelo \@ref(eq:WLS-HR), respectivamente.
+ponderados (WLS) de $\bs{\beta}$ en los modelos \@ref(eq:harmReg-mat) y \@ref(eq:WLS-HR), 
+respectivamente, y escribamos $\hat{y}_i=[\bs{X}\hat{\bs{\beta}}][i]$ y $\hat{y}_i^\ast=[\bs{X}\,\hat{\bs{\beta}}^\ast][i]$
+para denotar los valores ajustados con estos modelos.
 
-En nuestro caso, $\kappa=2\,p+1$ y para el modelo homoscedástico (OLS), 
+Suponiendo que ajustamos ambos modelos y en cada caso empleamos $p$ armónicos,
+entonces $\kappa=2\,p+1$ y para el modelo homoscedástico (OLS), 
 \[
-    L(\hat{\bs{\gamma}}) \propto \sigma^{-L}\, 
-    \mbox{exp} \{ -\frac{1}{2\sigma^2}\,\sum_{i=1}^L\,( z_i - [\bs{X}\hat{\bs{\gamma}}][i] )^2 \}.
+    \msf{L}(\hat{\bs{\beta}}) \propto \sigma^{-L}\, 
+    \mbox{exp} \{ -\frac{1}{2\sigma^2}\,\sum_{i=1}^L\,( y_i - \hat{y}_i )^2 \}.
 \]
 mientras que para el modelo heteroscedástico (WLS),
 \[
-    L(\hat{\bs{\beta}}) \propto \prod_{i=1}^L\,\sigma_i^{-1}\, 
-    \mbox{exp} \{ -\frac{1}{2}\, \sum_{i=1}^L\, \frac{ (z_i - [\bs{X}\,\hat{\bs{\beta}}][i])^2 }{\sigma_i^2} \}
+    \msf{L}(\hat{\bs{\beta}}^\ast) \propto \prod_{i=1}^L\,\sigma_i^{-1}\, 
+    \mbox{exp} \{ -\frac{1}{2}\, \sum_{i=1}^L\, \frac{ (y_i - \hat{y}_i^\ast)^2 }{\sigma_i^2} \}
 \]
+
+Es sabido que en el modelo de regresión armónica, el estimador por mínimos cuadrados
+coincide con el estimador por máxima verosimilitud. Por tanto, el AIC de los modelos
+homoscedástico (OLS) y heteroscedástico (WLS) son iguales a:
+\begin{align*}
+  AIC_{\mbox{OLS}}
+  &=
+  2p+1 - 2\left( -L \log(\sigma) - \frac{1}{2\sigma^2}\,\sum_{i=1}^{L} (y_i - \hat{y}_i)^2  \right)\\
+  &=
+  2p+1 + 2 L \log(\sigma) + \frac{L}{\sigma^2}\,\MSE[\hat{\bs{y}}]\\
+  AIC_{\mbox{WLS}}
+  &=
+  2p+1 - 2\left( - \sum_{i=1}^{L}\log(\sigma_i) - \frac{1}{2} \sum_{i=1}^{L} 
+  \frac{(y_i - \hat{y}_i^\ast)^2}{\sigma_i^2}  \right)\\
+  &=
+  2p+1 + 2 \sum_{i=1}^{L}\log(\sigma_i) + L\,\MSE[ \hat{\bs{y}}^\ast / \bs{\sigma} ],
+\end{align*}
+en la última igualdad, $\bs{\sigma} = (\sigma_1,\ldots,\sigma_L)$.
+
+Arriba escribimos $\MSE$ para denotar la suma de los residuales al cuadrado interpretados 
+como el promedio de la diferencia al cuadrado entre las observaciones $\bs{y}$ y 
+su predictor $\hat{\bs{y}}$. Más aún, recordando la definición del _coeficiente 
+de determinación en el modelo de regresion lineal_, el llamado $R^2$, tenemos lo siguiente
+\[
+  R^2
+  =
+  1 - \frac{\mbox{SRC}}{\mbox{STC}}
+  =
+  1 - \frac{n\,\MSE}{\mbox{STC}},
+\]
+donde $SRC$ es la suma de residuales al cuadrado, $\sum_{i=1}^{n}(y_i - \hat{y}_i)^2$,
+y $STC$ es la suma total de cuadrados, $\sum_{i=1}^{n}(y_i - \bar{y})^2$, a partir
+de donde se sigue que
+\[
+  n\,\MSE = \mbox{STC} \times (1 - R^2).
+\]
+Recordemos que mientras mejor es el ajuste del modelo lineal, el valor de $R^2$ es
+más cercano a uno, lo cual resulta equivalente a que el $\MSE$ sea cercano a cero.
+De manera inversa, si el valor de $\MSE$ es cercano a cero, entonces $R^2$ se
+aproxima a uno, lo cual es evidencia de un buen ajuste del modelo.
+
+En general, el AIC provee una métrica que busca balancear la parsimonia (el menor número
+de parámetros) y la bondad de ajuste (el menor valor de $\MSE$) de un modelo. En 
+términos prácticos, en presencia de dos modelos candidatos, el valor de AIC más
+pequeño provee evidencia en favor del modelo con este AIC.
 
 
 ## Regresión local polinomial
