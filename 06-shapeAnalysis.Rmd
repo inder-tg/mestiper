@@ -565,7 +565,7 @@ del modelo \@ref(eq:WLS-HR) y como tal, deben ser estimados. Una manera sencilla
 de estimar los valores de las $\sigma_t$'s es a través del uso de las distribuciones
 de NDVI por fecha de adquisición. Es decir, a partir de la curva de climatología,
 es posible obtener un estimador $\hat{\sigma}_t$ para cada $t$. Por ejemplo, 
-se puede usar la mediana de la distribución, $\hat{\sigma}_t = \mbox{mediana}\{ y_{t + 23 \cdot k } \mid k=0,1,\ldots,23\}$, $t=1,\ldots,L$.
+se puede usar la desviación estándar de la distribución o bien un estimador robusto tal como la mediana del valor absoluto de las distancias entre las observaciones y la mediana de la distribución (MAD, por sus siglas en inglés), $\hat{\sigma}_t = \mbox{mad}\{ y_{t + 23 \cdot k } \mid k=0,1,\ldots,23\}$, $t=1,\ldots,L$.^[En R, la función ```mad``` permite calcular la _median absolute deviation_ un estimador robusto de la dispersión de una distribución.]
 
 La estimación de los parámetros restantes del modelo es similar a la del caso
 homoscedástico. Iniciamos notando que a partir de la Ec. \@ref(eq:harmReg-mat), sabemos que 
@@ -671,7 +671,7 @@ de balancear número de parámetros vs. plausibilidad.
 Denotemos con $\hat{\bs{\beta}}$ y $\hat{\bs{\beta}}^\ast$
 los estimadores por mínimos cuadrados ordinarios (OLS) y mínimos cuadrados
 ponderados (WLS) de $\bs{\beta}$ en los modelos \@ref(eq:harmReg-mat) y \@ref(eq:WLS-HR), 
-respectivamente, y escribamos $\hat{y}_i=[\bs{X}\hat{\bs{\beta}}][i]$ y $\hat{y}_i^\ast=[\bs{X}\,\hat{\bs{\beta}}^\ast][i]$
+respectivamente, y escribamos $\hat{y}_i=\bs{X}[i,]\hat{\bs{\beta}}$ y $\hat{y}_i^\ast=\bs{X}[i,]\,\hat{\bs{\beta}}^\ast$
 para denotar los valores ajustados con estos modelos.
 
 Suponiendo que ajustamos ambos modelos y en cada caso empleamos $p$ armónicos,
