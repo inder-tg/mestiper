@@ -20,19 +20,19 @@ description: "This is more than a test"
 ---
 
 ```{r setup, include=FALSE}
-library(rgdal)
-library(raster)
-library(sp)
-library(sf)
-library(mapview)
-library(geoTS)
-
-library(fpp)
-library(forecast)
-library(Kendall)
-library(trend)
-library(RColorBrewer)
-library(gtools)
+# library(rgdal)
+# library(raster)
+# library(sp)
+# library(sf)
+# library(mapview)
+# library(geoTS)
+# 
+# library(fpp)
+# library(forecast)
+# library(Kendall)
+# library(trend)
+# library(RColorBrewer)
+# library(gtools)
 
 knitr::opts_chunk$set(echo = TRUE)
 
@@ -44,10 +44,12 @@ getMA <- function(y, h, weight){# y must be ts object
 out
 }
 
-library(sta)
-library(changepoint)
-library(bfast)
-# library(sephora)
+# library(sta)
+# library(changepoint)
+# library(bfast)
+# # library(sephora)
+
+source(paste0(getwd(),"/Rscripts/auxPKG.R"))
 
 source(paste0(getwd(),"/Rscripts/funciones_auxiliares.R"))
 
