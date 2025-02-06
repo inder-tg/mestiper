@@ -36,13 +36,13 @@ description: "This is more than a test"
 
 knitr::opts_chunk$set(echo = TRUE)
 
-getMA <- function(y, h, weight){# y must be ts object
-  out <- y
-  out[c(1:h,(length(y)-h+1):length(y))] <- NA
-  out[(1+h):(length(y)-h)] <- sapply( (1+h):(length(y)-h), 
-                                      function(s) sum(y[(s-h):(s+h)])/weight )
-out
-}
+# getMA <- function(y, h, weight){# y must be ts object
+#   out <- y
+#   out[c(1:h,(length(y)-h+1):length(y))] <- NA
+#   out[(1+h):(length(y)-h)] <- sapply( (1+h):(length(y)-h), 
+#                                       function(s) sum(y[(s-h):(s+h)])/weight )
+# out
+# }
 
 # library(sta)
 # library(changepoint)
@@ -50,8 +50,9 @@ out
 # # library(sephora)
 
 source(paste0(getwd(),"/Rscripts/auxPKG.R"))
+source(paste0(getwd(),"/Rscripts/auxFUN.R"))
 
-source(paste0(getwd(),"/Rscripts/funciones_auxiliares.R"))
+# source(paste0(getwd(),"/Rscripts/funciones_auxiliares.R"))
 
 mohinoraFILES <- list.files(path = paste0(getwd(),"/RData/mohinora"),
                             pattern = ".RData", full.names = TRUE)
@@ -69,41 +70,42 @@ mohinoraFILES <- list.files(path = paste0(getwd(),"/RData/mohinora"),
 # mohinora$values[,3] <- mohinora_2000033[,3]
 # mohinora$values[,4:230] <- mohinora_2000_2009[,3:229]
 
-getSD <- function(m){
-  v <- numeric(nrow(m))
-  H <- solve( t(m) %*% m )
-  
-  for(i in seq_len(length(v))){
-    v[i] <- m[i,] %*% H %*% m[i,]
-  }
-  
-  v
-}
+# getSD <- function(m){
+#   v <- numeric(nrow(m))
+#   H <- solve( t(m) %*% m )
+#   
+#   for(i in seq_len(length(v))){
+#     v[i] <- m[i,] %*% H %*% m[i,]
+#   }
+#   
+#   v
+# }
 
-getDesignMat <- function(numFreq, freq=23){
-  
-  # numFreq <- 23
-  # freq <- 23*9
-  
-  mat <- matrix(0, nrow = freq, ncol = min(2 * numFreq + 1, freq))
-  vecTs <- 2 * pi * (0:(freq-1)) / freq
-  mat[,1] <- 1
-  mat[, seq(2, 2 * numFreq, 2)] <- sapply(1:numFreq, function(s) cos( s * vecTs ))
-  mat[, seq(2, 2 * numFreq, 2)+1] <- sapply(1:numFreq, function(s) sin( s * vecTs ))
-  
-  mat
-}
+# getDesignMat <- function(numFreq, freq=23){
+#   
+#   # numFreq <- 23
+#   # freq <- 23*9
+#   
+#   mat <- matrix(0, nrow = freq, ncol = min(2 * numFreq + 1, freq))
+#   vecTs <- 2 * pi * (0:(freq-1)) / freq
+#   mat[,1] <- 1
+#   mat[, seq(2, 2 * numFreq, 2)] <- sapply(1:numFreq, function(s) cos( s * vecTs ))
+#   mat[, seq(2, 2 * numFreq, 2)+1] <- sapply(1:numFreq, function(s) sin( s * vecTs ))
+#   
+#   mat
+# }
 
-vecToMatrix <- function (x, lenPeriod = 23) {
-    if (length(x)%%lenPeriod != 0) {
-        stop("Length of 'x' must be a multiple of 'lenPeriod'")
-    }
-    output <- matrix(nrow = length(x)/lenPeriod, ncol = lenPeriod)
-    for (i in seq_len(nrow(output))) {
-        output[i, ] <- x[((i - 1) * lenPeriod + 1):(i * lenPeriod)]
-    }
-    output
-}
+# vecToMatrix <- function (x, lenPeriod = 23) {
+#     if (length(x)%%lenPeriod != 0) {
+#         stop("Length of 'x' must be a multiple of 'lenPeriod'")
+#     }
+#     output <- matrix(nrow = length(x)/lenPeriod, ncol = lenPeriod)
+#     for (i in seq_len(nrow(output))) {
+#         output[i, ] <- x[((i - 1) * lenPeriod + 1):(i * lenPeriod)]
+#     }
+#     output
+# }
+
 ```
 
 \newcommand{\msf}[1]{\mathsf{#1}}

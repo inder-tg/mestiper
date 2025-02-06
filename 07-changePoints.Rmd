@@ -510,7 +510,7 @@ en esta serie de tiempo.
 Empleando la función ```cpt.meanvar()``` de changepoint durante el periodo 1940-1986,
 encontramos un punto de cambio hacia 1957.
 ```{r cps-yearly, warning=FALSE}
-test1 <- read.table(txtFILES[1])
+test1 <- read.table(txtFILES[2])
 tuscaloosa_short_ts <- ts(test1$V2[41:87], start = c(1940,1),
                           end = c(1986,1), frequency = 1)
 
@@ -527,7 +527,7 @@ No es correcto aplicar ```bfast()``` directamente sobre los registros anuales de
 a que esta serie no tiene un componente estacional. Por tanto, optamos por aplicar
 ```bfast()``` a la serie de registros mensuales de temperatura durante el periodo 1940-1967 identificando un cambio hacia 1950.
 ```{r cps-monthly, warning=FALSE}
-test2 <- read.table(txtFILES[2])
+test2 <- read.table(txtFILES[1])
 tuscaloosa_monthly_ts <- ts(test2$V3[(39*12+1):(67*12)], 
                             start = c(1940,1), end = c(1967,12),
                             frequency = 12)

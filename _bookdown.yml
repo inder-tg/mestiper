@@ -1,2 +1,2 @@
 rmd_files : ["index.Rmd", "01-intro.Rmd", "02-elementosEstadistica.Rmd", "03-metodos.Rmd", 
-"04-anomaliesAnalysis.Rmd", "05-trendAnalysis.Rmd", "06-shapeAnalysis.Rmd"]
+"04-anomaliesAnalysis.Rmd", "05-trendAnalysis.Rmd", "06-shapeAnalysis.Rmd", "07-changePoints.Rmd"]
