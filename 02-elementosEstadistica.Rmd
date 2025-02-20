@@ -334,7 +334,7 @@ o equivalentemente,
   T_n := X_1+\cdots+X_n \approx \mathbf{N}(n\mu, n\sigma^2).
 \]
 
-En nuestro ejemplo tenemos que $n=25$, $\mu=0.5$ y $\sigma=0.25$ por lo cual
+En nuestro ejemplo tenemos que $n=25$, $\mu=0.5$ y $\sigma^2=0.25$ por lo cual
 la función de densidad del elemento aleatorio $T_n$ luce como en la Figura \@ref(fig:Tn-densidad2).
 
 ```{r test, echo=FALSE, include=FALSE}
@@ -443,8 +443,7 @@ los datos observados si el modelo proabilístico seleccionado explicara
 _correctamente_ el fenómeno bajo consideración. Es decir, debemos calcular una
 **probabilidad**. Para ser precisos, queremos encontrar la probabilidad de
 observar datos como los registrados (o incluso datos aún menos plausibles)
-dado que la hipótesis de trabajo es verdadera. Esta probabilidad recibe el
-nombre de **$p$-valor**.
+dado que la hipótesis de trabajo es verdadera. Esta probabilidad se conoce como **$p$-valor**.
 
 Cuando el p-valor es _alto_, entonces no hemos observado algo inusual o
 sorprendente.^[Por ejemplo, arriba reflexionamos sobre la relativamente alta
@@ -456,7 +455,8 @@ otras hipótesis, similares a la seleccionada, pueden estar en línea con los da
 registrados, por tanto con un $p$-valor alto _no hemos probado que la
 hipótesis es verdadera_. Lo que sí podemos aseverar es que la hipótesis
 no parece falsa. Formalmente, **fallamos en rechazar** la hipótesis. En efecto,
-parece una aseveración débil pero es lo que hay (y no es falso).
+parece una aseveración débil pero a la luz de los datos podemos estar convencidos
+que nuestra aseveración es correcta.
 
 Cuando el $p$-valor es suficientemente _bajo_, entonces estamos en presencia
 de datos que son poco probables de observarse _si_ la hipótesis de trabajo
@@ -531,8 +531,9 @@ el término hipótesis sin la adjetivación nula, esto no debe causar confusión
 También arriba hicimos incapié en el caso opuesto a la ausencia de asociación
 entre las variables, es decir, $\rho\neq0$. En el clásico marco de una prueba
 de hipótesis estadística la relación de orden opuesta a aquella especificada en
-la hipótesis nula recibe el nombre de _hipótesis alternativa_. En símbolos
-escribimos $H_a: \rho\neq0$.
+la hipótesis nula recibe el nombre de _hipótesis alternativa_. Así, para nuestro
+ejemplo, podemos escribir la hipótesis alternativa usando los símbolos
+$H_a: \rho\neq0$.
 
 Arriba hemos mostrado como traducir una hipótesis científica, formulada
 a partir de conocimiento acerca de un fenómeno, en un conjunto de relaciones matemáticas.
@@ -565,7 +566,8 @@ y en general el objeto utilizado para probar la hipótesis nula,
 se denomina _estadístico de prueba_.
 En el mundo real nosotros tenemos acceso a datos de precipitación e índice de aridez,
 es decir números, a partir de los cuales podemos calcular la contraparte
-_muestral_ de $\rho$, en símbolos, $\widehat{\rho}$.
+_muestral_ de $\rho$, en símbolos, $\widehat{\rho}$.^[El símbolo $\widehat{\rho}$ se lee
+como _rho gorrito_.]
 
 El estadístico de prueba es un objeto aleatorio y como tal posee una distribución de
 probabilidad. La facilidad para determinar esta distribución en ocasiones influye en la selección del estadístico de prueba. En este curso frecuentemente encontraremos
