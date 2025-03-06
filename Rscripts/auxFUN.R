@@ -295,3 +295,21 @@ vecToMatrix <- function (x, lenPeriod = 23) {
   }
   output
 }
+
+# --- Added on Feb 25, 2025
+
+spRast_valuesCoords <- function(spRaster, na_rm=FALSE){
+  spPoints <- as.points(spRaster, na.rm=na_rm)
+  
+  spValues <- terra::extract(spRaster, spPoints)
+  
+  DIM <- dim(spValues)
+  
+  spRasterToPoints <- as.matrix(spValues[1:DIM[1],2:DIM[2]])
+  
+  spCoords <- crds(spRaster, na.rm=na_rm)
+  
+  list(values=spRasterToPoints, coords=spCoords)  
+}
+
+
