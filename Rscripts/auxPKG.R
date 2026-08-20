@@ -15,7 +15,9 @@ neededPackages <- c("raster", "sf", "mapview", "geoTS", "fpp",
                     "gtools", "sta", "changepoint", "bfast")
                     
 
-packagesToInstall <- neededPackages[!(neededPackages %in% installed.packages()[,"Package"])]
+packagesToInstall <- setdiff( neededPackages, installed.packages()[,"Package"] )
+
+# %neededPackages[!(neededPackages %in% installed.packages()[,"Package"])]
 
 if( length(packagesToInstall) ){
   for( i in 1:length(packagesToInstall) ){
