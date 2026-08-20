@@ -46,23 +46,21 @@ Para tener una copia de las notas localmente
   
   2. **IA aplicada al análisis de series de tiempo satelitales**
   
-    a. _Temporal convolutional neural network for the classification of satellite image time series_ de Pelletier 
-    et al. 2019.
+      a. _Temporal convolutional neural network for the classification of satellite image time series_ de Pelletier et al. 2019.
     
-    b. _Deep Learning for Satellite Image Time Series Analysis: A Review_ de Miller et al. 2023.
+      b. _Deep Learning for Satellite Image Time Series Analysis: A Review_ de Miller et al. 2023.
   
-  
+
   3. **Aprendizaje profundo en percepción remota (RNN, LSTM, Transformers, CNN)**
   
-    a. _Deep Learning in Remote Sensing: A Comprehensive Review and List of Resources_ de Zhu et al. 2017.
+      a. _Deep Learning in Remote Sensing: A Comprehensive Review and List of Resources_ de Zhu et al. 2017.
     
-    b. _An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale_ de Dosovitskiy et al. 2021.
+      b. _An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale_ de Dosovitskiy et al. 2021.
   
   4. **IA y Big Data en Observación de la Tierra (Google Earth Engine)**
   
-    a. _Google Earth Engine: Planetary-scale geospatial analysis for everyone_ de Gorelick et al. 2017.
+      a. _Google Earth Engine: Planetary-scale geospatial analysis for everyone_ de Gorelick et al. 2017.
     
-    b. _Google Earth Engine and Artificial Intelligence (AI): A Comprehensive Review_ de Yang et al. 2022.
-
+      b. _Google Earth Engine and Artificial Intelligence (AI): A Comprehensive Review_ de Yang et al. 2022.
 </details>
   
