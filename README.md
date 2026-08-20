@@ -28,19 +28,19 @@ Para tener una copia de las notas localmente
   7. Oprime la opción Build en el panel Environment
   8. Oprime la pestaña Build book
     
-## Materiales complementarios
+## 📌 Materiales complementarios
   
 <details> 
 <summary>GASTIS, 2027-1</summary>
 
-** Bibliografía complementaria
+**Bibliografía complementaria**
 
   1. **Fusión de imágenes satelitales (STARFM, ESTARFM, CNN, GAN)**
 
       a. _On the blending of the Landsat and MODIS surface reflectance: Predicting daily Landsat surface reflectance_ de
   Gao et al. 2006.
   
-  b. _An enhanced spatial and temporal adaptive reflectance fusion model for complex heterogeneous regions_ 
+      b. _An enhanced spatial and temporal adaptive reflectance fusion model for complex heterogeneous regions_ 
       de Zhu & Gao, 2010.
   
   
@@ -49,20 +49,20 @@ Para tener una copia de las notas localmente
     a. _Temporal convolutional neural network for the classification of satellite image time series_ de Pelletier 
     et al. 2019.
     
-  b. _Deep Learning for Satellite Image Time Series Analysis: A Review_ de Miller et al. 2023.
+    b. _Deep Learning for Satellite Image Time Series Analysis: A Review_ de Miller et al. 2023.
   
   
   3. **Aprendizaje profundo en percepción remota (RNN, LSTM, Transformers, CNN)**
   
     a. _Deep Learning in Remote Sensing: A Comprehensive Review and List of Resources_ de Zhu et al. 2017.
     
-  b. _An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale_ de Dosovitskiy et al. 2021.
+    b. _An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale_ de Dosovitskiy et al. 2021.
   
   4. **IA y Big Data en Observación de la Tierra (Google Earth Engine)**
   
     a. _Google Earth Engine: Planetary-scale geospatial analysis for everyone_ de Gorelick et al. 2017.
     
-  b. _Google Earth Engine and Artificial Intelligence (AI): A Comprehensive Review_ de Yang et al. 2022.
+    b. _Google Earth Engine and Artificial Intelligence (AI): A Comprehensive Review_ de Yang et al. 2022.
 
 </details>
   
