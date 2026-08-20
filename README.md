@@ -28,6 +28,8 @@ Para tener una copia de las notas localmente
   7. Oprime la opción Build en el panel Environment
   8. Oprime la pestaña Build book
     
+## Materiales complementarios
+  
 <details> 
 <summary>GASTIS, 2027-1</summary>
 
