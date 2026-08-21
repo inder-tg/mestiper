@@ -10,7 +10,10 @@
 #
 # -----------------------------------------------------------------------------
 
-neededPackages <- c("raster", "sf", "mapview", "geoTS", "fpp",
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+
+
+neededPackages <- c("raster", "sf", "mapview", "geoTS", #"fpp",
                     "forecast", "Kendall", "trend", "RColorBrewer",
                     "gtools", "sta", "changepoint", "bfast")
                     
@@ -33,7 +36,7 @@ library(sf)
 library(mapview)
 library(geoTS)
 
-library(fpp)
+# library(fpp)
 library(forecast)
 library(Kendall)
 library(trend)
