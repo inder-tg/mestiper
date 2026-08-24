@@ -23,12 +23,16 @@ description: "This is more than a test"
 
 knitr::opts_chunk$set(echo = TRUE)
 
-source(paste0(getwd(),"/Rscripts/auxPKG.R"))
-source(paste0(getwd(),"/Rscripts/auxFUN.R"))
+library(here)
 
-mohinoraFILES <- list.files(path = paste0(getwd(),"/RData/mohinora"),
-                            pattern = ".RData", full.names = TRUE)
+# source( here("Rscripts", "auxPKG.R") )
+# source( here("Rscripts", "auxFUN.R") )
 
+source( "Rscripts/auxPKG.R" )
+source( "Rscripts/auxFUN.R" )
+
+mohinoraFILES <- list.files( path = "RData/mohinora", # here( "RData", "mohinora" ),
+                             pattern = ".RData", full.names = TRUE )
 ```
 
 \newcommand{\msf}[1]{\mathsf{#1}}

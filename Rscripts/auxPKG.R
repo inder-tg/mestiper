@@ -13,9 +13,9 @@
 options(repos = c(CRAN = "https://cloud.r-project.org"))
 
 
-neededPackages <- c("raster", "sf", "mapview", "geoTS", #"fpp",
+neededPackages <- c("raster", "sf", "mapview", "geoTS", "fpp2",
                     "forecast", "Kendall", "trend", "RColorBrewer",
-                    "gtools", "sta", "changepoint", "bfast")
+                    "gtools", "sta", "changepoint", "bfast", "here")
                     
 
 packagesToInstall <- setdiff( neededPackages, installed.packages()[,"Package"] )
@@ -36,7 +36,7 @@ library(sf)
 library(mapview)
 library(geoTS)
 
-# library(fpp)
+library(fpp2)
 library(forecast)
 library(Kendall)
 library(trend)
