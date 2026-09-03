@@ -19,6 +19,32 @@ library(patchwork)
 # ----------------------------------------------------------
 # 0. Lectura de datos
 # ----------------------------------------------------------
+
+calcofi_corrected <- calcofi %>%
+  mutate(Dist_cat = case_when(
+    Dist_cat == "Costera"   ~ "Oceánica",
+    Dist_cat == "Oceánica"  ~ "Costera",
+    Dist_cat == "Transición" ~ "Transición",
+    TRUE ~ Dist_cat
+  ))
+
+
+calcofi_corrected %>%
+  group_by(Dist_cat) %>%
+  summarise(
+    min_Dist = min(Distance, na.rm = TRUE),
+    max_Dist = max(Distance, na.rm = TRUE),
+    temp_range = paste0(round(min(mean_T_degC, na.rm = TRUE), 2), " - ",
+                        round(max(mean_T_degC, na.rm = TRUE), 2)),
+    oxigeno_range = paste0(round(min(mean_O2ml_L, na.rm = TRUE), 2), " - ",
+                           round(max(mean_O2ml_L, na.rm = TRUE), 2)),
+    n = n()
+  )
+
+
+write_csv(calcofi_corrected, "data/datos_calcofi_corrected.csv")
+
+
 # Leemos el dataset depurado de CalCOFI (corregido)
 calcofi <- read_csv( here( "data", "datos_calcofi_corregido.csv" ) )
 
