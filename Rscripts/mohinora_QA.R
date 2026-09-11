@@ -52,7 +52,7 @@ mohinora_DATA_reliability <- rast(RELIABILITYfiles)
 
 # mohinoraRDataDIR <- paste0( mestiperDIR, "/RData" )
 DIR_outputs <- here( "data", "outputs" )
-SHPfiles <- list.files(path = DIRS_outputs,
+SHPfiles <- list.files(path = DIR_outputs,
                        pattern = ".shp$",
                        full.names = TRUE)
 
@@ -125,6 +125,11 @@ writeRaster(TEMP_EVI,
 
 # --- for-loop: Resolviendo una tarea vía iteración
 for(i in 2:nlyr(mohinora_NDVI_DATA)){
+  
+  if( i %% 50 == 0 ){
+    cat("Working on layer: ", i, "\n")
+  }
+  
   TEMP_NDVI <- subset(mohinora_NDVI_DATA, i)
   TEMP_EVI <- subset(mohinora_EVI_DATA, i)
   AUX <- subset(mohinora_DATA_reliability, i)
@@ -144,6 +149,11 @@ for(i in 2:nlyr(mohinora_NDVI_DATA)){
               filename = here(whereToSaveEVI, nameFILE), # paste0( whereToSave, "/", nameFILE ),
               datatype = datatype(mohinora_EVI_DATA)[1],
               overwrite = TRUE)
+  
+  if( i %% 600 == 0 ){
+    cat("Terminó con éxito: ", Sys.time(), "\n")
+  }
+  
 }
 
 # --- 
@@ -157,12 +167,11 @@ mohinora_NDVI_QA <- rast(ndviQAFILES)
 mohinora_NDVI_QA_shp <- crop(mohinora_NDVI_QA, mohinora_shp,
                              mask=TRUE)
 
-
 eviQAFILES <- list.files( path = here( lst_DIRS$mohinora_2026, "250m_16_days_EVI_QA" ), # paste0( getwd(), "/data/mohinora/250m_16_days_NDVI_QA" ),
                            pattern = ".tif$",
                            full.names = TRUE )
 
-mohinora_EVI_QA <- rast(ndviQAFILES)
+mohinora_EVI_QA <- rast(eviQAFILES)
 
 mohinora_EVI_QA_shp <- crop(mohinora_EVI_QA, mohinora_shp,
                              mask=TRUE)
@@ -180,7 +189,7 @@ pixel <- mohinora_NDVI_QA_rTp$values[1700,]
 
 (pixel_maxgap <- maxLagMissVal(x=pixel)$maxLag)
 
-pixel_ts <- ts( pixel, start = c(2000,1), end = c(2024,23), frequency = 23 )
+pixel_ts <- ts( pixel[1:(20+(25)*23)], start = c(2000,1), end = c(2025,23), frequency = 23 )
 
 par(mfrow=c(1,1))
 plot(pixel_ts, ylab="NDVI (integer format)")
@@ -192,7 +201,7 @@ pixel <- mohinora_EVI_QA_rTp$values[1700,]
 
 (pixel_maxgap <- maxLagMissVal(x=pixel)$maxLag)
 
-pixel_ts <- ts( pixel, start = c(2000,1), end = c(2024,23), frequency = 23 )
+pixel_ts <- ts( pixel[1:(20+(25)*23)], start = c(2000,1), end = c(2024,23), frequency = 23 )
 
 par(mfrow=c(1,1))
 plot(pixel_ts, ylab="EVI (integer format)")
@@ -224,10 +233,10 @@ write(as.character(Sys.time()[1]), file=progressReportFile,
 kluster <- parallel::makeCluster(numCores-1, outfile="")
 registerDoParallel(kluster)
 
-output <- foreach(i=1:nrow(mohinora_DATA_QA_rTp$values), .combine="rbind",
+output <- foreach(i=1:nrow(mohinora_NDVI_QA_rTp$values), .combine="rbind",
                   .packages="geoTS") %dopar% { 
                     
-                    pixel <- mohinora_NDVI_QA_rTp$values[i,]
+                    pixel <- mohinora_NDVI_QA_rTp$values[i,1:(20+(25)*23)]
                     
                     pixel_percentMiss <- sum(is.na(pixel)) / length(pixel) * 100 # length de cualquier pixel es 483
                     
