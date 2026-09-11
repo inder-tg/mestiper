@@ -1,0 +1,28 @@
+<PAMDataset>
+  <PAMRasterBand band="1">
+    <GDALRasterAttributeTable>
+      <FieldDefn index="0">
+        <Name>Value</Name>
+        <Type>0</Type>
+        <Usage>5</Usage>
+      </FieldDefn>
+      <FieldDefn index="1">
+        <Name>Descr</Name>
+        <Type>2</Type>
+        <Usage>2</Usage>
+      </FieldDefn>
+      <Row index="0">
+        <F>0</F>
+        <F>Good data, use with confidence</F>
+      </Row>
+      <Row index="1">
+        <F>11</F>
+        <F>Cloudy data, Target not visible, covered with cloud</F>
+      </Row>
+      <Row index="2">
+        <F>1</F>
+        <F>Marginal data, Useful, but look at other QA information</F>
+      </Row>
+    </GDALRasterAttributeTable>
+  </PAMRasterBand>
+</PAMDataset>
