@@ -24,6 +24,9 @@ library(geoTS)
 library(foreach)
 library(doParallel)
 library(raster)
+library(sf)
+library(ggplot2)
+library(plotly)
 
 source("Rscripts/auxFUN.R")
 
@@ -53,6 +56,9 @@ SHPfiles <- list.files(path = here("data", "outputs"), # paste0( getwd(), "/data
 mohinora_shp <- read_sf(SHPfiles[1])
 
 # OJO: lst_dirs fue definido en mohinora_tmap.R
+DIR <- list.dirs( here("data") )
+lst_dirs <- setNames( as.list(DIR), basename(DIR) )
+
 usvFILES <- list.files(path = lst_dirs$mohinora_usv7,
                        full.names = TRUE,
                        pattern = ".shp$")
@@ -98,11 +104,11 @@ XY <- locator()
 xy <- get_timeSeries_byClicking(c(XY$x, XY$y),
                                 df=mohinora_NDVI_rTp$coords)
 
-pixel <- mohinora_NDVI_rTp$values[xy$coord, ]
+pixel <- mohinora_NDVI_rTp$values[xy$coord, 1:(20+(25)*23)]
 
 # pixel <- mohinora_DATA_rTp$values[295, ]
 # OJO: end = c(2026, X)
-pixel_ts <- ts(pixel, start = c(2000,1), end = c(2024,23),
+pixel_ts <- ts(pixel, start = c(2000,1), end = c(2025,23),
                frequency = 23)
 
 plot(pixel, main="pixel original")
@@ -110,12 +116,20 @@ plot(pixel, main="pixel original")
 plot(pixel_ts, xlab="Años", ylab="NDVI", col="darkgreen", 
      main="pixel como objeto 'ts'")
 
+# --- alternativa
+
+p <- ggplot(data.frame(time=time(pixel_ts), value=as.numeric(pixel_ts)),
+            aes(x=time, y=value)) + 
+  geom_line(color="darkgreen")
+ggplotly(p)
+
+
 # ------------------------------------------------------------------------------
 # --- CONOCE tu DATASET!!
 # --- Extremo cuidado al usar ts() para definir un objeto
 
-pixel_ts[593:595] # últimas 3 entradas del vector pixel_ts 
-as.numeric(pixel[590:592]) # últimas 3 entradas del vector pixel
+pixel_ts[596:598] # últimas 3 entradas del vector pixel_ts 
+as.numeric(pixel[593:595]) # últimas 3 entradas del vector pixel
 as.numeric(pixel[1:3]) # primeras 3 entradas del vector pixel
 # ------------------------------------------------------------------------------
 
@@ -127,8 +141,18 @@ pixel_aug_ts <- ts(pixel_aug, start = c(2000,1), end = c(2025,23),
 plot(pixel_aug_ts, xlab="Años", ylab="NDVI", col="darkgreen", 
      main="pixel aumentado como objeto 'ts'")
 
-pixel_aug_ts[593:595]
-as.numeric(pixel[590:592])
+pixel_aug_ts[596:598]
+as.numeric(pixel[593:595])
+
+# --- alternativa
+
+p_aug <- ggplot(data.frame(time=time(pixel_aug_ts), 
+                       value=as.numeric(pixel_aug_ts)),
+            aes(x=time, y=value)) + 
+  geom_line(color="darkgreen")
+
+ggplotly(p_aug)
+
 
 # -----------------------------------------------------------------------------
 # --- Uso de la curva de climatología para imputar las primeras 3 fechas del pixel
@@ -151,6 +175,26 @@ plot(pixel_aug_ts, xlab="Años", ylab="NDVI", col="darkgreen",
 
 plot(pixel_ts_correct, ylab="NDVI", col="darkgreen", 
      main="pixel imputado visto como objeto 'ts'")
+
+# --- alternativa
+
+# Convertir a data.frame
+df <- data.frame(
+  time = time(pixel_ts_correct),
+  series1 = as.numeric(pixel_aug_ts),
+  series2 = as.numeric(pixel_ts_correct)
+)
+
+# Plot interactivo con dos series de tiempo
+plot_ly(df, x = ~time) %>%
+  add_lines(y = ~series1, name = "NDVI original", 
+            line = list(color = "darkgreen")) %>%
+  add_lines(y = ~series2, name = "NDVI con 3 primeras fechas", 
+            line = list(color = "blue")) %>%
+  layout(title = "Comparación de dos series de tiempo",
+         xaxis = list(title = "Años"),
+         yaxis = list(title = "NDVI"))
+
 
 pixel_output <- c(mohinora_NDVI_rTp$coords[xy$coord,], pixel_aug)
 # ------------------------------------------------------------------------------

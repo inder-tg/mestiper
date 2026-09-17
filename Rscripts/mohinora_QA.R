@@ -151,7 +151,7 @@ for(i in 2:nlyr(mohinora_NDVI_DATA)){
               overwrite = TRUE)
   
   if( i %% 600 == 0 ){
-    cat("Terminó con éxito: ", Sys.time(), "\n")
+    print( paste0("Terminó con éxito: ", Sys.time()) )
   }
   
 }

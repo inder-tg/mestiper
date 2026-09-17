@@ -313,3 +313,67 @@ spRast_valuesCoords <- function(spRaster, na_rm=FALSE){
 }
 
 
+# --- Added on Sep 17, 2026
+
+get_timeSeries_byClicking <- function(toPlot, df){
+  nRow <- length(unlist(toPlot)) / 2
+  
+  mat_toPlot <- matrix(as.numeric(unlist(toPlot)), nrow = nRow)
+  
+  dX <- matrix(nrow = nrow(df))
+  
+  dY <- matrix(nrow = nrow(df))
+  
+  aproxX <- numeric(nRow)
+  
+  aproxY <- numeric(nRow)
+  
+  dX <- sapply(1:nRow, function(s) abs(df[,1] - mat_toPlot[s,1]))
+  
+  aproxX <- sapply(1:nRow, function(s) df[which.min(dX[,s]),1] )
+  
+  dY <- sapply(1:nRow, function(s) abs(df[,2] - mat_toPlot[s,2]))
+  
+  aproxY <- sapply(1:nRow, function(s) df[which.min(dY[,s]),2] )
+  
+  toExtract <- matrix(nrow = nRow, ncol = 2)
+  
+  toExtract[,1] <- aproxX
+  toExtract[,2] <- aproxY
+  #
+  IND <- 1:length(df)
+  xTemp <- which(df[,1] == toExtract[1,1])
+  yTemp <- which(df[xTemp,2] == toExtract[1,2])
+  #
+  xyRow <- xTemp[yTemp] # df[xTemp[yTemp],1:2]
+  
+  list(coord = xyRow)
+  # xyRow
+}
+
+# NOTE: for this to work, length(x) must be a multiple of lenPeriod
+climatology <- function(x, lenPeriod){
+  MAT <- get_pixel_matrix(x=x, lenPeriod=lenPeriod)
+  
+  BOXPLOT <- boxplot(MAT, plot=FALSE)
+  
+  list(matrix=MAT, boxplot=BOXPLOT)
+}
+
+gapfill_climatology <- function(y, x, box=c("lower", "median", "upper")){
+  
+  NA_ind <- (1:length(y))[is.na(y)]
+  
+  output <- y
+  
+  clima <- climatology(x=x, lenPeriod=23)
+  
+  box <- match.arg(box)
+  
+  quant <- ifelse(box=="lower", 2, ifelse(box=="median", 3, 4))
+  
+  output[NA_ind] <- clima$boxplot$stats[quant,NA_ind]
+  
+  output  
+}
+
