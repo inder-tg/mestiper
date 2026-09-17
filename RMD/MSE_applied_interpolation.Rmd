@@ -1,0 +1,297 @@
+---
+title: "Error Cuadrático Medio: cuantificando la eficiencia de un estimador"
+author: "Inder Tecuapetla"
+header-style:
+  - \usepackage[T1]{fontenc}
+  - \usepackage[utf8]{inputenc}
+  - \usepackage{subfigure}
+  - \newcommand{\tn}[1]{\textnormal{#1}}
+  - \newcommand{\ind}{{1\hspace{-2.5pt}\tn{l}}}
+  - \usepackage{amsmath}
+  - \newcommand{\bs}[1]{\boldsymbol{#1}}
+  - \usepackage[mathscr]{eucal}
+  - \newcommand{\B}[1]{\boldsymbol{\mathcal{#1}}}
+  - \newcommand{\prob}{\B{P}}
+  - \newcommand{\mb}[1]{\mathbb{#1}}
+  - newcommand{\R}{\mb{R}}
+
+header-includes: 
+  - \usepackage{subfigure}
+  - \usepackage{ragged2e}
+date: "8/03/2024"
+output: beamer_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Sesgo
+
+ - Has oído hablar de \textcolor{red}{sesgo}?
+
+ - Qué significa \textcolor{red}{sesgo} para ti?
+ 
+ - Qué significa \textcolor{red}{sesgo} de un \textcolor{orange}{estimador}?
+ 
+
+## Estimador 
+ 
+ \begin{center}
+  \setlength{\fboxsep}{10pt}
+  \setlength{\fboxrule}{5pt}
+  \fbox{
+  \begin{minipage}{0.55\textwidth}
+    \justify
+    {\small 
+    En estadística, decimos que un estimador es una \textcolor{red}{función}
+    (regla de asociación) de los datos (muestra aleatoria) usada para
+    \textcolor{red}{estimar} (aproximar) el valor de un parámetro de algún modelo 
+    }
+  \end{minipage}
+  }
+ \end{center}
+
+## Estimador: Ejemplos
+ 
+  - Modelo normal (\emph{la campana de Gauss})
+ 
+    - Estatura: Típicamente se asume que la estatura de una población se puede modelar
+    con la campana de Gauss la cual está centrada en un valor $\mu$ (media) y su 
+    dispersión está determinada por la desviación estándar ($\sigma$).\medskip
+    
+    - Recuerdan _Dos estadísticas de uso común_ en **introStats.pdf**?
+    Media y desviación estándar muestral
+\[
+\bar{x}_n := \frac{1}{n}\sum_{i=1}^n\,x_i,\qquad 
+\hat{\sigma}^2_n := \frac{1}{n}\sum_{i=1}^n\,( x_i - \bar{x}_n )^2
+\]
+
+    - Sus contrapartes distribucionales son
+\[
+\bar{X}_n := \frac{1}{n}\sum_{i=1}^n\,X_i,\qquad 
+\sigma^2_n := \frac{1}{n}\sum_{i=1}^n\,( X_i - \bar{X}_n )^2
+\]
+
+## Estimador: Ejemplos ...
+
+  2. Talla de calzado
+  
+  3. Peso al nacer: El peso \emph{normal} de un recién nacido está entre 2.5 y 3.5 kg.
+  
+<!-- ## Función de densidad de una normal estándar ($\mu=0$, $\sigma=1$) -->
+
+<!-- ```{r, echo = FALSE} -->
+<!-- x <- seq(-5, 5, by = 0.1) -->
+<!-- y <- dnorm(x = x, mean = 0, sd = 1) -->
+
+<!-- plot(x, y, type = "l", col = "red", lwd = 3,  -->
+<!--      ylab = "", xlab = "") -->
+<!-- ``` -->
+
+
+<!-- ## Función de densidad de una normal estándar ($\mu=0$, $\sigma=0.25$) -->
+
+<!-- ```{r, echo = FALSE} -->
+<!-- x <- seq(-5, 5, by = 0.1) -->
+<!-- y <- dnorm(x = x, mean = 0, sd = 0.25) -->
+
+<!-- plot(x, y, type = "l", col = "red", lwd = 3,  -->
+<!--      ylab = "", xlab = "") -->
+<!-- ``` -->
+
+<!-- ## Función de densidad de una normal estándar ($\mu=0$, $\sigma=2$) -->
+
+<!-- ```{r, echo = FALSE} -->
+<!-- x <- seq(-5, 5, by = 0.1) -->
+<!-- y <- dnorm(x = x, mean = 0, sd = 2) -->
+
+<!-- plot(x, y, type = "l", col = "red", lwd = 3,  -->
+<!--      ylab = "", xlab = "") -->
+<!-- ``` -->
+
+## Sesgo de un estimador
+
+  - Supongamos que $\vartheta_n$ (depende de los datos) aproxima/estima el valor 
+  de algún parámetro distibucional $\vartheta$ (e.g. la media o la varianza de una 
+  densidad normal).\medskip
+  
+  - Si $E[ \vartheta_n ]$ (\textcolor{orange}{valor esperado de $\vartheta_n$}) es diferente a $\vartheta$,
+  entonces el estimador $\vartheta_n$ es sesgado.
+  
+  
+## Sesgo de un estimador: Math world vs real world 
+  
+ \begin{center}
+  \setlength{\fboxsep}{10pt}
+  \setlength{\fboxrule}{5pt}
+  \fbox{
+  \begin{minipage}{0.55\textwidth}
+    \justify
+    {\small 
+  $E[\vartheta_n]$ es una cantidad asociada a la función de distribución 
+  del estimador $\vartheta_n$, un ente matemático. Su contraparte empírico 
+  (en el mundo real) es el promedio aritmético (\emph{la media})
+  }
+  \end{minipage}
+  }
+ \end{center}
+  
+
+## Error cuadrático medio (Mean Squared Error)
+
+ - $\vartheta_n$ denota un estimador del parámetro $\vartheta$
+
+ - El \textcolor{orange}{error cuadrático medio} del estimador $\vartheta_n$ se 
+ define como:
+ 
+ \begin{align*}
+  MSE(\vartheta_n) 
+  &:= 
+  E [ (\vartheta - \vartheta_n)^2 ]\\
+  &=
+  E [ (\vartheta - \mu_n + \mu_n - \vartheta_n)^2 ] \qquad (\mu_n = E[ \vartheta_n ])\\
+  &=
+  (\vartheta - \mu_n)^2 + E[ (\vartheta_n - \mu_n)^2 ]\\
+  &=
+  {Sesgo}^2 + Varianza( \vartheta_n )
+ \end{align*}
+ 
+ - Hecho conocido: $Varianza(X) = E[( X - E(X) )]^2 = E[X^2] - E^2[X]$.
+
+## Sesgo vs. Varianza
+
+\begin{figure}
+  \centering  
+  \subfigure{\includegraphics[height=3cm,width=3.5cm]{figs/highBias_lowVariance.pdf}{\tiny Sesgo grande y var. pequeña.}}
+  \subfigure{\includegraphics[height=1.6cm,width=1.7cm]{figs/highBias_highVariance.pdf}{\tiny Sesgo grande y var. grande.}}\\  
+  \qquad
+  \subfigure
+  {\includegraphics[height=1.6cm,width=1.7cm]{figs/lowBias_lowVariance.pdf}
+  {\tiny Sesgo pequeño y var. pequeña.}}
+  \subfigure{\includegraphics[height=1.6cm,width=1.7cm]{figs/lowBias_highVariance.pdf}
+  {\tiny Sesgo pequeño y var. grande.}}
+\end{figure}
+
+## Estimador insesgado
+
+  - El estimador $\vartheta_n$ es insesgado para el parámetro $\vartheta$ si:
+  
+  \[
+    E[\vartheta_n] = \vartheta.
+  \]
+  
+  - Por ejemplo, en el modelo normal con media $\mu$ y varianza $\sigma^2$,
+  la media es un estimador insesgado de $\mu$
+  
+  \[
+    E[\bar{X}_n]
+    =
+    E\left[ \frac{1}{n}\sum_{i=1}^n\,X_i \right]
+    =
+    \frac{1}{n}\sum_{i=1}^n\,E[X_i]
+    =
+    \frac{1}{n}(n\mu) = \mu.
+  \]
+
+
+## Estimador insesgado para la varianza
+
+  - Sin embargo para la varianza, usando el estimador definido arriba
+  tenemos:
+
+\begin{align*}
+  E[ \sigma_n^2 ]
+  &=
+  E\left[ \frac{1}{n}\sum_{i=1}^n\,\left(X_i - \bar{X}_n\right)^2 \right]
+  =
+  \frac{1}{n}\,E\left[\sum_{i=1}^n\,\left(X_i^2 - 2X_i\,\bar{X}_n + \bar{X}_n^2 \right)\right]\\
+  &=
+  \frac{1}{n}\sum_{i=1}^n\,E[X_i^2] - 2E\left[ \left(\frac{1}{n}\sum_{i=1}^n\,X_i\right)\bar{X}_n \right] + E[\bar{X}_n^2]\\
+  &=
+  \frac{1}{n}\sum_{i=1}^n\,E[X_i^2] - 2E[ \bar{X}^2_n ] + E[\bar{X}_n^2]
+  =
+  \frac{1}{n}\sum_{i=1}^n\,E[X_i^2] - E[\bar{X}_n^2]\\
+  &=
+  \frac{1}{n}\sum_{i=1}^n\,(\sigma^2 + \mu^2) - \left( \frac{\sigma^2}{n} + \mu^2 \right)
+  =
+  \frac{n-1}{n}\sigma^2
+\end{align*}
+
+
+## Estimador insesgado para la varianza ...
+
+  Es decir,
+  
+\[
+  \frac{1}{\alert{n}}\,E[ \sum_{i=1}^n\,(X_i - \bar{X}_n)^2 ]
+  =
+  \frac{n-1}{\alert{n}}\sigma^2,
+\]
+  
+  o de forma equivalente,
+  
+  
+  \[
+  \frac{1}{n-1}E[ \sum_{i=1}^n\,(X_i - \bar{X}_n)^2 ] = \sigma^2.
+  \]
+  
+  Por tanto, un estimador insesgado para $\sigma^2$ es:
+  
+  \[
+    \sigma^2_{n,I} = \frac{1}{n-1} \sum_{i=1}^n\,(X_i - \bar{X}_n)^2.
+  \]
+  
+  
+## MSE de un estimador insesgado
+
+  - Si $\vartheta_n$ es insesgado para $\vartheta$, entonces
+  
+  \[
+    MSE(\vartheta_n) = Varianza(\vartheta_n)
+  \]
+  
+  - Es probable que hayan visto el uso del $RSME$:
+  
+  \[
+    RMSE(\vartheta_n) = \sqrt{MSE(\vartheta_)},
+  \]
+
+  que en el caso de un estimador insesgado es igual a la desviación estándar del estimador $\vartheta_n$.
+
+## Aplicación de MSE en llenado de datos faltantes 
+
+  - Práctica usando \texttt{mse\_interpol.R}
+
+## EJERCICIO: Esquema de simulación
+
+  Hasta ahora has evaluado el desempeño de algunos métodos de llenado de datos faltantes cuando el conjunto de datos se mantiene fijo. Ahora vas a evaluar el desempeño de estos métodos cuando una misma máscara es aplicada a cada una de las variables.
+  
+  - Aplica la máscara \texttt{masks[1,]} a cada una de las series de tiempo
+  (\texttt{data1}, \texttt{data2},..., \texttt{data5})
+  
+  - A las series de tiempo resultante del inciso anterior, aplica
+  cada uno de los métodos de llenado presentados en esta clase
+  
+  - Existe un método que produzca los mejores resultados? Justifica tu respuesta.
+  
+  - Repite los incisos anteriores usando cada una de las máscaras (\texttt{masks[2,]},
+  \texttt{masks[3,]},...)
+
+## EJERCICIO: Analizar desempeño sobre EVI
+
+  - Aplica la máscara  \texttt{masks[1,]} a la serie de tiempo de EVI anualmente a partir
+  de 2001 y hasta 2025
+  
+  - A las series de tiempo resultante del inciso anterior, aplica
+  cada uno de los métodos de llenado presentados en esta clase
+  
+  - Existe un método que produzca los mejores resultados? Justifica tu respuesta.
+  
+  - Repite los incisos anteriores usando cada una de las máscaras (\texttt{masks[2,]},
+  \texttt{masks[3,]},...)
+
+  
+
+
+

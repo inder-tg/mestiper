@@ -1,0 +1,588 @@
+---
+title: "Algunos conceptos estadísticos"
+author: "Inder Tecuapetla"
+header-style:
+  - \usepackage[T1]{fontenc}
+  - \usepackage[utf8]{inputenc}
+  - \usepackage{subfigure}
+  - \newcommand{\tn}[1]{\textnormal{#1}}
+  - \newcommand{\ind}{{1\hspace{-2.5pt}\tn{l}}}
+  - \usepackage{amsmath}
+  - \newcommand{\bs}[1]{\boldsymbol{#1}}
+  - \usepackage[mathscr]{eucal}
+  - \newcommand{\B}[1]{\boldsymbol{\mathcal{#1}}}
+  - \newcommand{\prob}{\B{P}}
+  - \newcommand{\mb}[1]{\mathbb{#1}}
+  - newcommand{\R}{\mb{R}}
+
+header-includes: 
+  - \usepackage{subfigure}
+  - \usepackage{ragged2e}
+date: "9/02/2022"
+output: beamer_presentation
+---
+
+```{r setup, include=FALSE}
+library(ggplot2)
+library(ggdist)
+library(tidyverse)
+library(tidyquant)
+
+workingDIR <- "C:/Users/inder/OneDrive/Desktop/posgradosUNAM/GASTIS2024-2"
+source(paste0(workingDIR,"/Rscripts/auxFUN.R"))
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Aleatoreidad
+
+- TODOS sabemos qué significa que \emph{algo} sea \textcolor{orange}{aleatorio}, cierto?
+
+- Juegos de azar: dados, cartas, lotería
+
+- La vida misma: tiempo de espera en un semáforo, tiempo de graduación del posgrado
+
+- Lo \textcolor{red}{aleatorio} no es siempre \emph{tan} aleatorio; 
+\textcolor{orange}{long run} debería aclarar este punto; usar la
+aleatoriedad como herramienta
+
+## Aleatoreidad (continuación)
+
+ \begin{center}
+  \setlength{\fboxsep}{10pt}
+  \setlength{\fboxrule}{5pt}
+  \fbox{
+  \begin{minipage}{0.45\textwidth}
+    \center
+    \Huge{1, 2, 3, 4}
+  \end{minipage}
+  }
+ \end{center}
+
+## Aleatoreidad (continuación)
+
+ \begin{center}
+  \setlength{\fboxsep}{10pt}
+  \setlength{\fboxrule}{5pt}
+  \fbox{
+  \begin{minipage}{0.65\textwidth}
+    \center
+    \Huge{3 (75\%), (2, 4) 20\% \\ 1 (5\%)}
+  \end{minipage}
+  }
+ \end{center}
+
+## Aleatoreidad en la práctica: \texttt{R}
+
+\begin{figure}
+  \centering  
+  \subfigure{\includegraphics[height=1.8cm,width=2.25cm]{figs/canelo.png}{\tiny Canelo}}
+  \qquad
+  \subfigure{\includegraphics[height=1.8cm,width=2.5cm]{figs/ochoa.png}{\tiny Memo}}    
+  \qquad
+  \subfigure
+  {\includegraphics[height=1.8cm,width=2.5cm]{figs/chayito.png}{\tiny Chayito}}
+\end{figure}
+
+  - Se anuncia que 20\%, 30\% y 50\% de las cajas contienen las fotos de
+  Canelo, Ochoa y Chayito, respectivamente
+
+ ¿Cuántas cajas de cereal esperaríamos comprar para completar una colección?
+
+## Simulación de compras de caja de cereal
+
+```{r}
+outcome <- c()
+for(sim in 1:1000){
+  outcome <- c(outcome, getTrial()$numTrials)
+}
+
+outcome_df <- data.frame(values=outcome)
+
+out_boxplot <- ggplot(data=outcome_df, aes(y=values)) +
+  geom_boxplot(
+    width = 0.1,
+    # outlier.color = NA,
+    alpha = 0.5
+  )
+
+out_boxplot_raincloud <- out_boxplot + 
+  ggdist::stat_halfeye(
+    adjust=0.75, # bandwidth
+    justification=-0.15,
+    .width=0,
+    point_colour=NA
+  ) 
+
+out_boxplot_raincloud_points <- out_boxplot_raincloud + 
+  ggdist::stat_dots(
+    side="left",
+    justification=1.15,
+    binwidth=.045
+  )
+
+# --- Pro plot - kinda
+
+out_boxplot_raincloud_points +
+  scale_fill_tq() +
+  theme_tq() +
+  labs(
+    title = "Simulación: cajas compradas hasta completar colección de estampas",
+    subtitle = "Visualización: ggplot2+ggdist",
+    x = "",
+    y = "No. cajas compradas"
+  ) +
+  coord_flip()
+
+```
+
+## Dos estadísticas de uso muy común
+
+  - El promedio aritmético, o \textbf{media}, de una muestra $x_1,\ldots,x_n$
+  está definida como
+\[
+  \bar{x}_n := \frac{1}{n}\sum_{i=1}^n\,x_i
+\]
+
+  - La desviación estándar de una muestra $x_1,\ldots,x_n$ está
+  definida como $\sqrt{\sigma^2_n}$, donde
+\[
+  \sigma^2_n := \frac{1}{n}\sum_{i=1}^n\,( x_i - \bar{x}_n )^2
+\]
+
+
+## Ley de Grandes Números {.smaller}
+
+  - Simulemos haber tirado $1, 2, \ldots, 9, 10$ volados
+  
+  - En cada caso calculemos la media y la desviación
+  estándard de la \emph{muestra} de volados
+  
+```{r, echo=FALSE, size="tiny"}
+sims <- 1:10
+
+for(i in sims){
+  TEMP <- rbinom(i,1,0.5)
+  cat("No. Volados:", i, "Media:", mean(TEMP), "Desv. Est.:", sd(TEMP), "\n")
+}
+```
+
+
+## Ley de Grandes Números (continuación) {.smaller}
+
+  - Versión gráfica de lo anterior
+  
+```{r, echo=FALSE, cache=TRUE}
+sims <- c(5,50,500,5000)
+
+par(mfrow=c(2,2), mar=c(5,4.5,2,2))
+
+for(i in sims){
+  TEMP <- LLN2(i)
+  plot(1:i, TEMP$media, type = "l", col = "green", xlab = "Tamaño de muestra", ylab = "Promedio")
+  abline(h=0.5, col = "blue", lty = 2, lwd = 2)
+}
+```
+
+## Ley de Grandes Números (continuación)
+
+ \begin{center}
+  \setlength{\fboxsep}{10pt}
+  \setlength{\fboxrule}{5pt}
+  \fbox{
+  \begin{minipage}{0.55\textwidth}
+    \justify
+    {\small 
+    Considera $X_1,\ldots,X_n$ elementos aleatorios con media $\mu$ y varianza 
+    finita. Cuando $n$ (el tamaño de muestra) es arbitrariamente grande,
+    el promedio aritmético de las $X$'s \textbf{converge}(tiende o se aproxima) a $\mu$.
+    En símbolos,
+    \[
+      \bar{X}_n := \frac{1}{n}(X_1+\cdots+X_n) \to \mu.
+    \]
+    }
+  \end{minipage}
+  }
+ \end{center}
+
+## Probabilidad de un evento
+
+A partir de la ley de grandes números tenemos la versión 
+\emph{frecuentista} de la probabilidad de un evento.
+
+ \begin{center}
+  \setlength{\fboxsep}{32pt}
+  \setlength{\fboxrule}{5pt}
+  \fbox{
+  \begin{minipage}{0.65\textwidth}
+    \justify
+    {\small
+    Denotemos con $\bs{A}$ a cualquier evento de interés, entonces
+    \[
+  \prob\{\bs{A}\} 
+  = \mb{E}[\ind_{\bs{A}}] 
+  := 
+  \frac{\tn{Número de veces que ocurre } \bs{A}}{\tn{Número de ensayos}}
+    \]
+    }
+  \end{minipage}
+  }
+ \end{center}
+
+
+## Teorema del Límite Central
+
+  - Tira un dado (justo) digamos, 10,000 veces
+  
+  - El histograma de este experimento, luce más o menos así:
+  
+```{r, echo = FALSE}
+tiros <- sample(1:6, 10000, replace = TRUE)
+hist(tiros, prob = TRUE, right = FALSE, main = "")
+```
+
+
+## Teorema del Límite Central (continuación)
+
+  - Tira tres dados, calcula el promedio, repite 10,000 veces
+  
+  - El histograma de este experimento luce más o menos así:
+
+```{r, echo = FALSE}
+tiro1 <- sample(1:6, 1e4, replace = TRUE)
+tiro2 <- sample(1:6, 1e4, replace = TRUE)
+tiro3 <- sample(1:6, 1e4, replace = TRUE)
+
+output <- (tiro1 + tiro2 + tiro3)/3
+
+hist(output, breaks = 20, main = "")
+```
+
+## Teorema del Límite Central (continuación)
+
+  - Tira cinco dados, calcula el promedio, repite 10,000 veces
+  
+  - El histograma de este experimento luce más o menos así:
+
+```{r, echo = FALSE}
+tiro1 <- sample(1:6, 1e4, replace = TRUE)
+tiro2 <- sample(1:6, 1e4, replace = TRUE)
+tiro3 <- sample(1:6, 1e4, replace = TRUE)
+tiro4 <- sample(1:6, 1e4, replace = TRUE)
+tiro5 <- sample(1:6, 1e4, replace = TRUE)
+
+output <- (tiro1 + tiro2 + tiro3 + tiro4 + tiro5)/5
+
+mu <- mean(output)
+sd <- sd(output)
+
+x <- seq(1,6, by = 0.1)
+y <- dnorm(x = x, mean = mu, sd = sd)
+
+hist_output <- hist(output, breaks = 20, plot = FALSE)
+
+hist(output, breaks = 20, probability = TRUE, main = "")
+par(new=T)
+plot(x, y, type = "l", col = "red", lwd = 3, 
+     ylab = "", xlab = "", main = "",
+     ylim = range(hist_output$density), xlim = range(hist_output$mids),
+     xaxt = "n", yaxt = "n")
+```
+
+
+## Normal estándar
+
+  - La distribución de probabilidades \emph{Normal} con media $0$
+  y varianza $1$, típicamente, se conoce como \emph{normal estandar}.
+  
+  - Una normal estándar luce más o menos así:
+
+\vspace{-1cm}
+
+```{r, echo = FALSE}
+x <- seq(-6, 6, by = 0.1)
+y <- dnorm(x = x, mean = 0, sd = 1)
+
+yRan <- range(y)
+xRan <- range(x)
+
+plot(x, y, type = "l", col = "red", lwd = 3, 
+     ylab = "f(z)", xlab = "", #main = "P( Z < q_z )", 
+     ylim = yRan,
+     xlim = xRan, cex.main = 0.8)
+```
+
+## Teorema del Límite Central (continuación)
+
+  - En el ejemplo de los 5 dados, después de calcular el promedio de 
+  los tiros, restamos la media de esta cantidad aleatoria y dividimos entre su desviación estándar
+  
+\vspace{-1cm}
+```{r, echo = FALSE, fig.height=4, fig.width=4.5, fig.align="center"}
+tiro1 <- sample(1:6, 1e4, replace = TRUE)
+tiro2 <- sample(1:6, 1e4, replace = TRUE)
+tiro3 <- sample(1:6, 1e4, replace = TRUE)
+tiro4 <- sample(1:6, 1e4, replace = TRUE)
+tiro5 <- sample(1:6, 1e4, replace = TRUE)
+
+output <- (tiro1 + tiro2 + tiro3 + tiro4 + tiro5)/5
+
+mu <- mean(output)
+sd <- sd(output)
+
+output_std <- (output - mu)/sd
+
+x <- seq(-5, 5, by = 0.1)
+y <- dnorm(x = x, mean = 0, sd = 1)
+
+hist_output_std <- hist(output_std, breaks = 20, plot = FALSE)
+
+hist(output_std, breaks = 30, probability = TRUE, main = "", xlab="output", 
+     ylab="Density")
+par(new=T)
+plot(x, y, type = "l", col = "red", lwd = 3, 
+     ylab = "", xlab = "", main = "",
+     ylim = range(hist_output_std$density), xlim = range(hist_output_std$mids),
+     xaxt = "n", yaxt = "n")
+```
+
+
+## Teorema del Límite Central 
+
+ \begin{center}
+  \setlength{\fboxsep}{10pt}
+  \setlength{\fboxrule}{5pt}
+  \fbox{
+  \begin{minipage}{0.55\textwidth}
+    \justify
+    {\small 
+    Considera $X_1,\ldots,X_n$ elementos aleatorios con media $\mu$ y varianza 
+    finita $\sigma^2$. Cuando $n$ (el tamaño de muestra) es arbitrariamente grande,
+    el elemento aleatorio $\sqrt{n}( \bar{X}_n - \mu)$ converge en \textbf{distribución}
+    a una \emph{Normal} con media $0$ y varianza $\sigma^2$. En símbolos,
+    \[
+      \sqrt{n}( \bar{X}_n - \mu)
+      \stackrel{D}{\to}
+      \mathsf{N}(0,\sigma^2).
+    \]
+    }
+  \end{minipage}
+  }
+ \end{center}
+
+
+## Calculando probabilidades
+
+  - Usemos el símbolo $f(z)$ para referirnos a la función de densidad de 
+  la normal estándar ($Z$) (abajo la curva en \textcolor{red}{rojo})
+
+  - Los símbolos $\textbf{P}\{ Z \leq q_z \}$ significan calcular
+  el área bajo la gráfica $\{ (z, f(z)) \mbox{ para todo } z \leq q_z \}$
+  
+  - Visualmente queremos decir:
+\vspace{-1cm}
+```{r, echo = FALSE, fig.height=3, fig.width=3.5, fig.align="center"}
+x <- seq(-5, 5, by = 0.1)
+y <- dnorm(x = x, mean = 0, sd = 1)
+
+qz <- qnorm(0.05)
+xz <- x
+xz[x >= qz] <- NA
+yz <- y
+yz[x >= qz] <- NA
+
+yRan <- range(y)
+xRan <- range(x)
+
+plot(x, y, type = "l", col = "red", lwd = 3, 
+     ylab = "f(z)", xlab = "", #main = "P( Z < q_z )", 
+     ylim = yRan,
+     xlim = xRan, cex.main = 0.8)
+par(new = TRUE)
+plot(yz, type = "h",  ylim = yRan, xaxt = "n", yaxt = "n", 
+     xlab = "z", ylab = "")
+```
+
+## Calculando probabilidades
+
+  - Los símbolos $\textbf{P}\{ Z \geq q_z \}$ significan calcular
+  el área bajo la gráfica $\{ (z, f(z)) \mbox{ para todo } z \geq q_z \}$
+  
+  - Visualmente queremos decir:
+\vspace{-1cm}
+```{r, echo = FALSE, fig.height=3, fig.width=3.5, fig.align="center"}
+x <- seq(-5, 5, by = 0.1)
+y <- dnorm(x = x, mean = 0, sd = 1)
+
+qz <- qnorm(0.95)
+xz <- x
+xz[x < qz] <- NA
+yz <- y
+yz[x < qz] <- NA
+
+yRan <- range(y)
+xRan <- range(x)
+
+plot(x, y, type = "l", col = "red", lwd = 3, 
+     ylab = "f(z)", xlab = "", 
+     # main = "P( Z >= q_z )", 
+     ylim = yRan,
+     xlim = xRan, cex.main = 0.8)
+par(new = TRUE)
+plot(yz, type = "h",  ylim = yRan, xaxt = "n", yaxt = "n", 
+     xlab = "z", ylab = "")
+```
+
+## Calculando probabilidades con \texttt{R}
+
+  - Ejecuta \texttt{qnorm(0.05)}, \texttt{qnorm(0.95)}, \texttt{pnorm(qnorm(0.05))}
+  y \texttt{pnorm(qnorm(0.95))} en tu \texttt{R} session
+  
+```{r, results="as-is"}
+# cuantiles importantes (q_z)
+qnorm(0.05)
+
+qnorm(0.95)
+
+# las areas bajo las graficas
+pnorm(qnorm(0.05))
+pnorm(qnorm(0.95))
+```
+
+<!-- ## Sesgo -->
+
+<!--  - Has oído hablar de \textcolor{red}{sesgo}? -->
+
+<!--  - Qué significa \textcolor{red}{sesgo} para ti? -->
+
+<!--  - Qué significa \textcolor{red}{sesgo} en el contexto de jugar \textcolor{orange}{LUDO}? -->
+
+<!-- ## Sesgo y LUDO -->
+<!-- ### Reglas -->
+
+<!--  - El juego comienza cuando un jugador tira un dado y obtiene un \textcolor{red}{6} -->
+
+<!--  - De no obtenerse un 6, el turno pasa al siguiente jugador -->
+
+<!--  - Una vez obtenido un 6, el jugador moverá su ficha en el tablero tantas -->
+<!--  unidades como puntos obtenga en su dado -->
+
+<!--  - Si un jugador obtiene un 6, tiene un tiro extra. Si el tiro extra resulta en un 6, -->
+<!--  se obtiene un nuevo tiro extra. -->
+
+<!--  - El primer jugador en llevar su ficha a la línea de meta \textcolor{orange}{GANA!} -->
+
+<!-- ## -->
+
+<!-- \begin{center} -->
+<!--   \includegraphics[width=.85\textwidth]{figs/LUDO.png} -->
+<!-- \end{center} -->
+
+<!-- ## Posibles resultados -->
+
+<!--   - Se identificó el dado sesgado y se usó para ganar LUDO -->
+
+<!--   - Se identificó el dado sesgado, se usó pero se perdió en LUDO -->
+
+<!--   - Se identificó el dado justo, se usó y se ganó LUDO -->
+
+<!--   - Se identificó el dado justo, se usó y se perdió en LUDO -->
+
+<!--   - \textcolor{red}{¿Puedes estimar la probabilidad de obtener 6 usando el dado sesgado?} -->
+
+<!-- ## Esquema de simulación -->
+
+<!--   - Usa la función \texttt{tiroDadoRojo()} para: -->
+<!--     1. Simular lanzar \textcolor{red}{50} veces el dado rojo. -->
+<!--     \textbf{Hint:} \texttt{tiroDadoRojo()} -->
+<!--     2. Registra el resultado de cada lanzamiento. -->
+<!--     \textbf{Hint:} Guarda tus resultados en un vector de nombre \texttt{output} -->
+<!--     3. En los 50 lanzamientos, cuántas veces obtuviste 1, cuántas obtuviste 2, etc. -->
+<!--     \textbf{Hint.} \texttt{sum( output == 1 )} -->
+<!--     4. Guarda los resultados del inciso anterior en el vector -->
+<!--     \textcolor{orange}{\texttt{probDadoRojo}}, -->
+<!--     divide \texttt{probDadoRojo} por 50 y asigna los nombres \texttt{c(1, 2, 3, 4, 5, 6)} -->
+<!--     a sus columnas -->
+
+<!--   - Repite el ejercicio anterior utilizando \texttt{tiroDadoNegro()} -->
+
+<!--   - Discute tus resultados -->
+  
+## p-valor jugando cartas
+
+  - Simulemos tomar 5 cartas (con reemplazo) de un mazo, digamos Mazo1
+  
+```{r, echo=FALSE}
+  for(i in 1:5){
+    TEMP <- tomaCartaMazo1()
+    cat("Carta-", i, "es:", TEMP$carta, "\n")
+  }
+```
+
+
+## p-valor jugando cartas
+
+  - Podemos suponer que el elemento aleatorio "tomar una carta y obtener ROJA"
+  tiene probabilidad $p=0.5$
+  
+  - El modelo Bernoulli con parámetro $p$ sirve para describir matemáticamente este 
+  elemento aleatorio, en símbolos:
+  
+    * $X \sim Ber(p)$; el valor esperado $\mu$ de $X$ es $p$ y su varianza $\sigma^2$ 
+    es $p\times(1-p)$.
+  
+  
+## p-valor jugando cartas (continuación)
+
+  - Simulemos que hemos tomado 25 cartas (con reemplazo) de Mazo1
+  
+  - De acuerdo al Teorema del Límite Central,
+  
+  \[
+    X_1+\cdots+X_n
+    \sim 
+    \mathsf{N}(n \mu, n\sigma^2)
+  \]
+  
+  
+  - En nuestro caso,
+  
+    \[
+      X_1+\cdots+X_n
+      \sim
+      \mathsf{N}(12.5, 6.25)
+    \]
+  
+## p-valor jugando cartas (continuación)
+
+  - Sería atípico registrar más de 17.5 o menos de 7.5 cartas ROJAS
+
+```{r, echo=FALSE}
+x <- seq(0,25, by = 0.05)
+y <- dnorm(x = x, mean=12.5, sd=2.5)
+
+# qz <- qnorm(0.05,mean=12.5, sd=2.5)
+xz <- x
+xz[x >= 12.5 + 2 * 2.5] <- NA
+xz[x < 12.5 - 2 * 2.5] <- NA
+
+yz <- y
+yz[x >= 12.5 + 2 * 2.5] <- NA
+yz[x < 12.5 - 2 * 2.5] <- NA
+
+yRan <- range(y,yz,na.rm = T)
+
+plot(x, y, type = "l", col = "red", lwd = 3, 
+     ylab = "", xlab = "", main = "",
+     ylim=yRan
+     )
+par(new = TRUE)
+plot(x,yz, type = "h",  
+     ylim = yRan,
+     # xaxt = "n", yaxt = "n", 
+     xlab = "z", ylab = "")
+abline(v=7.5, col="blue", lty=2)
+abline(v=17.5, col="blue", lty=2)
+```
+  
+  
+
