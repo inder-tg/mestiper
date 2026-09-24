@@ -20,19 +20,11 @@ library(doParallel)
 
 library(imputeTS)
 library(here)
+library(plotly)
 
 source("Rscripts/auxFUN.R")
 
-# ---
-
-mestiperDIR <- paste0( getwd(), "/mestiper" )  # "C:/Users/inder/OneDrive/Desktop/mestiper" # USUARIO: modificar
-
-# dataDIR <- list.dirs( path = here( "data" ) )
-# 
-# mohinora_NDVI_imputation <- 
-#   # list.dirs(path = paste0( getwd(), "/TIF" ))[-1]
-# 
-# mohinora_NDVI_QA <-  #list.dirs(path = paste0( getwd(), "/data" ))[-1]
+# --- DATA loading
 
 FILES_NDVI_imputation <- list.files( path = here( "data", "outputs", "mohinora_imputation" ),
                                      pattern = "NDVI",
@@ -42,33 +34,72 @@ FILES_NDVI_QA <- list.files(path = here( "data", "mohinora_2026", "250m_16_days_
                             pattern = ".tif",
                             full.names = TRUE)
 
-mohinora_DATA <- rast(FILES_NDVI_imputation, raw=TRUE, drivers = "GTiff")
-add(mohinora_DATA) <- rast(FILES_NDVI_QA, raw=TRUE, drivers = "GTiff")
-
 FILES_NDVI <- c(FILES_NDVI_imputation, FILES_NDVI_QA)
 
-mohinora_DATA <- raster::stack(FILES_NDVI)
+mohinora_DATA <- rast( FILES_NDVI[1:598] ) # raster::stack(FILES_NDVI)
 
-# mohinora_DATA_rTp <- spRast_valuesCoords(mohinora_DATA)
 
-mohinora_DATA_rTp <- raster::rasterToPoints(mohinora_DATA)
-
-mohinora_DATA_rTp_coords <- mohinora_DATA_rTp[,1:2]
-mohinora_DATA_rTp_values <- mohinora_DATA_rTp[,3:551]
+mohinora_DATA_rTp <- spRast_valuesCoords(mohinora_DATA) #raster::rasterToPoints(mohinora_DATA)
 
 mohinora_interpol_linear <- matrix(nrow=nrow(mohinora_DATA_rTp$values), 
                                    ncol=ncol(mohinora_DATA_rTp$values))
 
+# --- AN example
+
+maskQA <- rast( here( "data", "outputs", "mohinora_QA", "missingValue.tif" ) )
+
+DIR_outputs <- here( "data", "outputs" )
+SHPfiles <- list.files(path = DIR_outputs,
+                       pattern = ".shp$",
+                       full.names = TRUE)
+
+mohinora_shp <- read_sf(SHPfiles[1])
+
+maskQA <- crop(maskQA, mohinora_shp, mask=TRUE)
+
+plot( maskQA )
+
+# --- 1. Ejecuta la línea de abajo
+XY <- locator()
+# --- 2. Haz click (SOLO UNA VEZ) en algún píxel en la imagen
+# --- 3. Presiona la tecla ESC de tu teclado
+# --- 4. Continúa con el script a partir de la línea 107
+
+xy <- get_timeSeries_byClicking(c(XY$x, XY$y),
+                                df=mohinora_DATA_rTp$coords)
 
 pixel <- mohinora_DATA_rTp$values[295,]
 
-pixel_ts <- ts(pixel, start = c(2000,1), end = c(2023,23), frequency = 23 )
+pixel <- mohinora_DATA_rTp$values[xy$coord,]
+
+pixel_ts <- ts(pixel, start = c(2000,1), end = c(2025,23), frequency = 23 )
 
 plot(pixel_ts)
 
+out_linear <- na_interpolation(pixel)
 
-# mohinora_interpol_climatology <- matrix(nrow=nrow(mohinora_DATA_rTp$values), 
-#                                         ncol=ncol(mohinora_DATA_rTp$values))
+out_linear_ts <- ts(out_linear, start = c(2000,1), end = c(2025,23), frequency = 23 )
+
+plot(out_linear_ts)
+
+# --- alternativa
+
+# Convertir a data.frame
+df <- data.frame(
+  time = time(pixel_ts),
+  series1 = as.numeric(pixel_ts),
+  series2 = as.numeric(out_linear_ts)
+)
+
+# Plot interactivo con dos series de tiempo
+plot_ly(df, x = ~time) %>%
+  add_lines(y = ~series1, name = "NDVI original", 
+            line = list(color = "darkgreen")) %>%
+  add_lines(y = ~series2, name = "NDVI interpol", 
+            line = list(color = "blue")) %>%
+  layout(title = "Comparación de dos series de tiempo",
+         xaxis = list(title = "Años"),
+         yaxis = list(title = "NDVI"))
 
 # --- TESTING code in parallel
 
@@ -104,7 +135,7 @@ str(output)
 
 # --- progress report file (to check out the process)
 
-progressReportFile <- paste0(getwd(), "/RData/progressReports/mohinora/progress_temporal_gapfilling.txt" )
+progressReportFile <- paste0(getwd(), "/RData/progressReports/mohinora_gapfilling.txt" )
 file.create(path=progressReportFile, showWarnings=FALSE)
 
 write("===TEMPORAL GAPFILLING began at===",
@@ -124,7 +155,7 @@ output <- foreach(i=1:nrow(mohinora_DATA_rTp$values), .combine="rbind",
                     
                     out_linear <- pixel
                     
-                    if(length( is.na(pixel) ) > 0){
+                    if( sum( !is.na(pixel) ) >= 2 ){
                       out_linear <- na_interpolation(pixel) 
                     }
                     
@@ -149,30 +180,27 @@ str(output)
 mohinora_interpol_linear <- output
 # mohinora_interpol_climatology[SAMPLE,] <- output[,550:(549*2)]
 
-# --- rasterization
+# --- RASTERIZATION
 
 PROJECTION <- "+proj=sinu +lon_0=0 +x_0=0 +y_0=0 +R=6371007.181 +units=m +no_defs"
 
-dirTIFS_toGet_names <- paste0(mestiperDIR, "/data/mohinora/250m_16_days_NDVI")
-listTIFnames <- list.files(path = dirTIFS_toGet_names,
-                           pattern = ".tif$",
-                           full.names = TRUE)
-
-vectorNAMES <- character(549)
-for(i in 1:549){
-  temp <- listTIFnames[i]
+vectorNAMES <- character(598)
+for(i in 1:598){
+  # i = 598
+  temp <- FILES_NDVI[i] #listTIFnames[i]
   aux <- strsplit(temp, "/")
   basename <- aux[[1]][ length(aux[[1]]) ]
   nameBASE <- strsplit(basename, ".tif", fixed=TRUE)[[1]]
-  vectorNAMES[i] <- paste0(nameBASE, 
-                           "_interpol")
+  vectorNAMES[i] <- paste0(nameBASE, "_interpol")
 }
 
-
-# --- asegurarse de crear /TIF/mohinora_interpolation
 # --- las primeras 3 columnas contienen valores de NDVI imputados
 # --- a través del procedimiento de climatología, por tanto, no es necesario
 # --- guardar esas capas nuevamente
+
+dir.create( here( "data", "mohinora_2026", "250m_16_days_NDVI_interpol" ),
+            recursive = TRUE )
+
 for(i in 4:ncol(mohinora_interpol_linear)){
   
   if( i %% 100 == 0){
@@ -186,59 +214,30 @@ for(i in 4:ncol(mohinora_interpol_linear)){
                           projection=PROJECTION) 
   
   raster::writeRaster(x=layer,
-                      filename = paste0(getwd(),
-                                        "/TIF/mohinora_interpolation/",
-                                        vectorNAMES[i-3]),
+                      filename = here( "data", "mohinora_2026", "250m_16_days_NDVI_interpol",
+                                       vectorNAMES[i] ),
                       format="GTiff",
                       datatype="INT2S",
                       overwrite=TRUE)
   
 }
 
-TIFilescheck <- list.files(path = paste0(getwd(), "/TIF/mohinora_interpolation"),
-                           pattern = ".tif$",
-                           full.names = TRUE)
-
-rTest <- rast(TIFilescheck)
-plot(rTest)
-
-
-# --- re run before mohinora_anomalies.R
-# --- guardando 552 capas en un solo archivo
-
-imputeTIFs <- list.files(path = paste0(getwd(), "/TIF/mohinora_imputation"),
-                         pattern = ".tif$",
-                         full.names = TRUE)
-
-TEMP <- rast(imputeTIFs)
-
-mohinora_DATA_interpol <- TEMP
-
-AUX <- rast(TIFilescheck)
-
-add(mohinora_DATA_interpol) <- AUX
-
-mohinora_DATA_interpol
-
-writeRaster(x=mohinora_DATA_interpol,
-            filename = paste0(getwd(), "/TIF/MOD13Q1_061_250m_16_days_NDVI_interpol.tif"),
-            datatype="INT2S", overwrite=TRUE)
 
 # --- verificando q todo está OK
 
 
-maskTIF <- list.files(path=paste0(getwd(), "/data/mohinora/250m_16_days_NDVI_QA"),
-                      pattern = ".tif$",
-                      full.names = TRUE)
+ndviQA <- list.files(path = here( "data", "mohinora_2026", "250m_16_days_NDVI_QA" ),
+                     pattern = ".tif$",
+                     full.names = TRUE)
 
-interpolTIFS <- list.files(path=paste0(getwd(), "/TIF/mohinora_interpolation"),
+ndviINTERPOL <- list.files(path = here( "data", "mohinora_2026", "250m_16_days_NDVI_interpol" ),
                            pattern = ".tif$",
                            full.names = TRUE)
 
 
-a <- rast(maskTIF) # mask
+a <- rast(ndviQA[1:595]) # mask
 
-b <- rast(interpolTIFS) # interpol
+b <- rast(ndviINTERPOL) # interpol
 
 x <- 450
 
@@ -247,20 +246,6 @@ plot(subset(a,x), main="Sin interpolación")
 # lines( mohinora_SHP_st, lwd=4)
 plot(subset(b,x), main="Con interpolación")
 # lines( mohinora_SHP_st, lwd=4)
-
-
-# mohinoraSHP <- paste0( getwd(), "/RData" )
-# 
-# RDatafiles <- list.files(path = mohinoraSHP,
-#                          pattern = ".RData",
-#                          full.names = TRUE)
-# 
-# mohinora_SHP <- LoadToEnvironment(RDatafiles[1])$mohinora_SHP_st
-# 
-# mohinoraDIR <- list.dirs(path=paste0( getwd(), "/mestiper/data/mohinora" ),
-#                          full.names = TRUE)
-# 
-# mohinora_SHP_st <- st_transform(x=mohinora_SHP, crs=crs(mohinora_DATA_interpol))
 
 
 
