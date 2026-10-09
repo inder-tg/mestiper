@@ -20,68 +20,86 @@ library(tmap)
 library(bfast)
 library(tidyverse)
 library(kableExtra)
+library(here)
 
 source( "Rscripts/auxFUN.R" )
 
 # --- DATA Loading
 
-mohinora_NDVI_DIRS <- list.dirs(path = paste0( getwd(), "/TIF" ))[-1]
+mohinora_NDVI_DIRS <- list.dirs(path = here("data", "mohinora_2026") )
 
-FILES_NDVI_imputation <- list.files(path = mohinora_NDVI_DIRS[2],
-                                    pattern = ".tif",
+FILES_NDVI_imputation <- list.files(path = here("data", "outputs", "mohinora_imputation"),
+                                    pattern = "NDVI",
                                     full.names = TRUE)
 
-FILES_NDVI_interpolation <- list.files(path = mohinora_NDVI_DIRS[3],
+FILES_NDVI_interpolation <- list.files(path = mohinora_NDVI_DIRS[5],
                                        pattern = ".tif",
                                        full.names = TRUE)
 
-mohinora_NDVI_files <- c(FILES_NDVI_imputation, FILES_NDVI_interpolation)
+mohinora_NDVI_files <- c(FILES_NDVI_imputation, FILES_NDVI_interpolation[1:595])
 
-mohinora_DATA <- stack(mohinora_NDVI_files)
+mohinora_DATA <- rast(mohinora_NDVI_files)
 
-mohinora_DATA_rTp <- rasterToPoints(mohinora_DATA) #spRast_valuesCoords(mohinora_DATA)
+mohinora_DATA_rTp <- spRast_valuesCoords(mohinora_DATA) #rasterToPoints(mohinora_DATA) #spRast_valuesCoords(mohinora_DATA)
 
-mohinora_DATA_rTp_coords <- mohinora_DATA_rTp[,1:2]
+# mohinora_DATA_rTp_coords <- mohinora_DATA_rTp[,1:2]
+# 
+# mohinora_DATA_rTp_values <- mohinora_DATA_rTp[,3:ncol(mohinora_DATA_rTp)]
 
-mohinora_DATA_rTp_values <- mohinora_DATA_rTp[,3:ncol(mohinora_DATA_rTp)]
+# mohinoraSHP <- paste0( getwd(), "/mestiper/RData" )
+# 
+# RDatafiles <- list.files(path = mohinoraSHP,
+#                          pattern = ".RData",
+#                          full.names = TRUE)
+# 
+# mohinora_SHP <- LoadToEnvironment(RDatafiles[1])$mohinora_SHP_sinusoidal
 
-mohinoraSHP <- paste0( getwd(), "/mestiper/RData" )
-
-RDatafiles <- list.files(path = mohinoraSHP,
-                         pattern = ".RData",
-                         full.names = TRUE)
-
-mohinora_SHP <- LoadToEnvironment(RDatafiles[1])$mohinora_SHP_sinusoidal
-
-shpFiles <- list.files(path = paste0( getwd(), "/data/mohinora_usv7" ),
+shpFiles <- list.files(path = here("data", "mohinora_usv7"),
                        pattern = ".shp",
                        full.names = TRUE)
 
 mohinora_USV <- read_sf(shpFiles[1])
+
+usv_COLORS <- c("#A1E5A5", "#E9D66B", "#00A877", 
+                "#66B032", "#83A4F0", "#FC8FAB", "#F500A1")
+
+usv_NAMES <- c("Pino", "Pastizal", "Pino-Encino",
+               "Ayarin", "Agro", "Arbustiva", "Arborea")
 
 # -----------------------------------------------
 # --- Clasificación de tendencias --- #
 # -----------------------------------------------
 
 plot(subset(mohinora_DATA,453))
-lines( visual_mohinora, lwd=4 )
+lines(mohinora_USV, col = usv_COLORS, lwd = 6)
+# plot(mohinora_USV, col = usv_COLORS, lwd = 6, add=TRUE)
+
+# Añadir la leyenda
+legend("topleft", # posición en el gráfico
+       legend = usv_NAMES,         # nombres de las categorías
+       col = usv_COLORS,           # colores de borde
+       lwd = 6,                    # grosor de línea en la leyenda
+       pt.cex = 1,                  # tamaño del texto
+       bty = "n",                  # sin caja alrededor
+       inset = c(0.015, 0.05))
+
 
 XY <- locator() 
 
 xy <- get_timeSeries_byClicking(c(XY$x, XY$y), 
-                                df=mohinora_DATA_interpol_rTp$coords)
+                                df=mohinora_DATA_rTp$coords)
 
 # 2564, 2298, buenos pixeles para cps
-pixel <- mohinora_DATA_rTp_values[2564, ] * 1e-4
+pixel <- mohinora_DATA_rTp$values[xy$coord, ] * 1e-4
 
 # --- objeto ts
 pixel_ts <- ts(pixel, 
                start = c(2000,1), 
-               end = c(2023,23),
+               end = c(2025,23),
                frequency = 23)
 # ---
 
-pixel_bfast01 <- bfast01( data=pixel_ts )
+pixel_bfast01 <- bfast01( data = pixel_ts )
 
 plot(pixel_bfast01)
 
@@ -89,7 +107,8 @@ pixel_bfast01$breakpoints
 
 bfast01classify(pixel_bfast01)
 
-getYear(start=2000, end=2023, bp=pixel_bfast01$breakpoints, freq=23)
+getYear(start=2000, end=2025, 
+        bp=pixel_bfast01$breakpoints, freq=23)
 
 # ---
 
@@ -253,16 +272,16 @@ map_YEARS <- matrixToRaster(matrix=YEARS, projection=PROJECTION)
 dir.create( paste0( getwd(), "/TIF/mohinora_cps"), recursive = TRUE )
 
 raster::writeRaster(map_TYPE,
-            filename = paste0( getwd(), "/TIF/mohinora_cps/map_TYPE"),
-            format="GTiff", datatype="INT2S", overwrite=TRUE)
+                    filename = paste0( getwd(), "/TIF/mohinora_cps/map_TYPE"),
+                    format="GTiff", datatype="INT2S", overwrite=TRUE)
 
 raster::writeRaster(map_YEARS,
-            filename = paste0( getwd(), "/TIF/mohinora_cps/map_YEARS"),
-            format="GTiff", datatype="INT2S", overwrite=TRUE)
+                    filename = paste0( getwd(), "/TIF/mohinora_cps/map_YEARS"),
+                    format="GTiff", datatype="INT2S", overwrite=TRUE)
 
 raster::writeRaster(map_SIGN,
-            filename = paste0( getwd(), "/TIF/mohinora_cps/map_SIGN"),
-            format="GTiff", datatype="INT2S", overwrite=TRUE)
+                    filename = paste0( getwd(), "/TIF/mohinora_cps/map_SIGN"),
+                    format="GTiff", datatype="INT2S", overwrite=TRUE)
 
 # --- just the ANP Cerro Mohinora
 
@@ -339,7 +358,7 @@ type_map = tm_shape(mohinora_cps_TYPE,
   tm_title("", frame = FALSE, bg.color = NA) +
   tm_compass(type = "8star", position = c("right", "bottom")) +
   tm_scalebar(text.size = 0.65,
-               position = c("right", "bottom")) +
+              position = c("right", "bottom")) +
   tm_add_legend("symbol", 
                 labels=usv_NAMES, 
                 col=usv_COLORS,
@@ -517,7 +536,7 @@ t(df_type) %>%
   #               font_size = 10) %>%
   column_spec(1, color = usv_COLORS_sorted) %>%
   row_spec(row=0, bold = TRUE)
-           # color = COLORES_update)
+# color = COLORES_update)
 
 # ----
 
