@@ -377,3 +377,17 @@ gapfill_climatology <- function(y, x, box=c("lower", "median", "upper")){
   output  
 }
 
+# --- Added Oct 8, 2026
+getYear <- function(start=2000, end=2018, bp, freq=23){
+  period <- start:end
+  totalDays <- c(0, freq * 1:length(start:end))
+  
+  if( length(bp) == 1 ){
+    year <- period[sum( totalDays - bp < 0 )]
+  } else {
+    year <- unlist( lapply(1:length(bp), function(s) period[sum( totalDays - bp[s] < 0 )]  ) )
+  }
+  
+  year
+}
+
