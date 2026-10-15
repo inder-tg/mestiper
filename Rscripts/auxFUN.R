@@ -351,6 +351,27 @@ get_timeSeries_byClicking <- function(toPlot, df){
   # xyRow
 }
 
+# Actualizado OCT 15, 2026
+spRast_values <- function(spRaster, na_rm=FALSE, 
+                          exact=FALSE){
+  
+  spPoints <- as.points(spRaster, na.rm=na_rm)
+  
+  spValues <- terra::extract(x=spRaster, 
+                             y=spPoints, 
+                             exact=exact)
+  
+  DIM <- dim(spValues)
+  
+  spRasterToPoints <- as.matrix(spValues[1:DIM[1],2:DIM[2]])
+  
+  # spCoords <- crds(spRaster, na.rm=na_rm)
+  # 
+  # list(values=spRasterToPoints, coords=spCoords)  
+  spRasterToPoints
+}
+
+
 # NOTE: for this to work, length(x) must be a multiple of lenPeriod
 climatology <- function(x, lenPeriod){
   MAT <- get_pixel_matrix(x=x, lenPeriod=lenPeriod)
