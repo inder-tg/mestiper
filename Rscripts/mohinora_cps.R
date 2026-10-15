@@ -70,7 +70,7 @@ usv_NAMES <- c("Pino", "Pastizal", "Pino-Encino",
 # --- Clasificación de tendencias --- #
 # -----------------------------------------------
 
-plot(subset(mohinora_DATA,453))
+plot(subset(mohinora_DATA, 453))
 lines(mohinora_USV, col = usv_COLORS, lwd = 6)
 # plot(mohinora_USV, col = usv_COLORS, lwd = 6, add=TRUE)
 
@@ -510,6 +510,59 @@ df_type <- data.frame("Pino" = percent_type[1,],
 
 row.names(df_type) <- 1:8
 
+# --- dplyr & more
+
+x <- terra::extract(
+  mohinora_cps_TYPE,
+  mohinora_USV,
+  exact = TRUE
+)
+
+# x |>
+#   dplyr::group_by(map_TYPE) |>
+#   dplyr::summarise(area = sum(fraction)) |>
+#   dplyr::mutate(percent = 100*area/sum(area))
+
+x <- x %>%
+  left_join(
+    mohinora_USV %>%
+      st_drop_geometry() %>%
+      mutate(ID = row_number()) %>%
+      select(ID, DESCRIPCIO),
+    by = "ID"
+  )
+
+porcentajes <- x %>%
+  filter( !is.na(map_TYPE) ) %>% # CRUCIAL
+  group_by(DESCRIPCIO, map_TYPE) %>%
+  summarise(area = sum(fraction),
+            .groups = "drop") %>%
+  group_by(DESCRIPCIO) %>%
+  mutate(
+    porcentaje = 100 * area / sum(area)
+  ) %>%
+  arrange(DESCRIPCIO, desc(porcentaje))
+
+porcentajes
+
+# # ---
+# 
+# percent_type <- matrix(nrow=7, ncol=8)
+# 
+# for(i in 1:nrow(percent_type)){
+#   percent_type[i,as.numeric(df_exact_percent[[i]]$TYPE)] <- as.numeric(df_exact_percent[[i]]$PERCENT) 
+# }
+# 
+# df_type <- data.frame("Pino" = percent_type[1,],
+#                       "PinoEncino"= percent_type[2,],
+#                       "Ayarin" = percent_type[3,],
+#                       "Pastizal" = percent_type[4,],
+#                       "Agro" = percent_type[5,],
+#                       "ArbustivaPino" = percent_type[6,],
+#                       "ArboreaPino" = percent_type[7,])
+# 
+# row.names(df_type) <- 1:8
+
 df_type[is.na(df_type)] <- 0
 
 t(df_type) %>%
@@ -531,7 +584,7 @@ t(df_type) %>%
   kbl(digits=2, booktabs = TRUE,
       caption = "Porcentaje de distintos tipos de
       tendencia por tipo de uso de suelo y vegetación usando 'terra::exact'") %>%
-  kable_minimal(full_width = FALSE, font_size=10) %>%
+  kable_minimal(full_width = FALSE, font_size=15) %>%
   # kable_styling(latex_options = "striped", full_width = FALSE,
   #               font_size = 10) %>%
   column_spec(1, color = usv_COLORS_sorted) %>%
@@ -540,3 +593,29 @@ t(df_type) %>%
 
 # ----
 
+COLORES_update <- c("#50C878", "#C08F73",
+                    "#006B3C", "#E32636",
+                    "#87A96B", "#2F221E",
+                    "#F2C185", "#66FF00")
+
+tabla <- t(df_type) %>%
+  kbl(digits=2, booktabs = TRUE,
+      caption = "Porcentaje de distintos tipos de
+      tendencia por tipo de uso de suelo y vegetación usando 'terra::exact'") %>%
+  kable_minimal(full_width = FALSE, font_size=25) %>%
+  # kable_styling(latex_options = "striped", full_width = FALSE,
+  #               font_size = 10) %>%
+  row_spec(row=0, bold = TRUE) %>%
+  column_spec(1, color = usv_COLORS_sorted, bold = TRUE)
+
+for( i in seq_along(COLORES_update)){
+  tabla <- tabla %>%
+    column_spec(
+      column = i + 1,
+      background = COLORES_update[i],
+      color = "white",
+      bold = TRUE
+    )
+}
+
+tabla
