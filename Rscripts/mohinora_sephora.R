@@ -16,29 +16,10 @@ library(terra)
 library(sf)
 library(tmap)
 library(raster)
+library(here)
+library(dplyr)
 
-# instalar clv, longitudinalData & TSclust from tar files
-
-library(TSclust)
 library(sephora)
-
-
-# 1. Install 'clv' (Required by longitudinalData)
-clv_url <- "https://r-project.org"
-install.packages(clv_url, repos = NULL, type = "source")
-
-
-# Install the remotes manager if you don't have it already
-if (!requireNamespace("remotes", quietly = TRUE)) {
-  install.packages("remotes")
-}
-
-# Install TSclust from the author's repository
-remotes::install_github("pmontman/TSclust")
-
-
-library(TSclust)
-
 
 source( "Rscripts/auxFUN.R" )
 
@@ -63,7 +44,7 @@ FILES_NDVI_interpolation <- list.files(path = mohinora_NDVI_DIRS[5],
                                        pattern = ".tif",
                                        full.names = TRUE)
 
-mohinora_NDVI_files <- c(FILES_NDVI_imputation, FILES_NDVI_interpolation[1:595])
+mohinora_NDVI_files <- c(FILES_NDVI_imputation, FILES_NDVI_interpolation)
 
 mohinora_DATA <- rast(mohinora_NDVI_files)
 
@@ -140,8 +121,6 @@ pixel <- mohinora_DATA_rTp$values[xy$coord, ] * 1e-4
 
 # --- GRAPHIX
 
-# library(sephora)
-
 pixel_ts <- ts( pixel, start = c(2000,1), end = c(2025,23), frequency = 23)
 
 plot(pixel_ts)
@@ -158,9 +137,9 @@ sephora_fit <- sephora::phenopar(x=pixel_ts,
                         distance = "dtw2", basis = BASIS,
                         k=3)
 
-tsPlot(sephora_fit)
+str( sephora_fit )
 
-# tsPlot(sephora_fit, type="ms")
+tsPlot(sephora_fit)
 
 # --- 
 
@@ -388,21 +367,13 @@ mohinora_dtw2 <- phenopar_polygon(product = "independent",
                               save_all = TRUE,
                               distance = "dtw2",
                               basis = BASIS,
+                              numCores = 20,
                               k=3,
                               confiBand = TRUE,
                               dirToSave = here( "RData", "mohinora_sephora" ),
                                 # paste0(getwd(), "/RData/chunk_3_2/output"),
                               outputFileBaseName = "mohinora_dtw2_sample_100")
 
-
-
-
-
-
-sephora_fit <- sephora::phenopar(x=pixel_ts,
-                                 distance = "dtw2", 
-                                 basis = BASIS,
-                                 k=3)
 
 
 
