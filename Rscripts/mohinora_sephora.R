@@ -131,7 +131,7 @@ rmPlot(pixel_ts, yLab = "NDVI")
 
 # --- MODELING
 
-BASIS <- drbasis(n=100, q=2)
+BASIS <- drbasis(n=75, q=2)
 
 sephora_fit <- sephora::phenopar(x=pixel_ts,
                         distance = "dtw2", basis = BASIS,
@@ -169,10 +169,11 @@ pixel_smooth <- ts( c(t(sephora_fit$xSmooth$fitOptAIC)),
 
 tsPlot( pixel_smooth )
 
-rmPlot( pixel_smooth )
+rmPlot( pixel_smooth, position_legend = "bottom", yLab = "NDVI" )
 
 # --- 
-(2000:2025)[setdiff(1:26, sephora_fit$series)]
+
+diff_years <- (2000:2025)[setdiff(1:26, sephora_fit$series)]
 
 # --- AUX object
 df <- data.frame(
@@ -181,56 +182,162 @@ df <- data.frame(
 ) %>%
   mutate(
     year = floor(time),
-    value = ifelse(year %in% c(2011, 2016), NA, value)
+    value = ifelse(year %in% diff_years, NA, value)
   )
 
 ggplot(df, aes(time, value)) +
   geom_line(color = "darkgreen")
 
-pixel_cluster <- ts( df$value, start = c(2000,1),
-                     end = c(2025,23),
-                     frequency = 23  )
+pixel_cluster <- ts( df$value, start = c(2000, 1),
+                     end = c(2025, 23),
+                     frequency = 23 )
                      
-tsPlot(pixel_cluster)                     
+rmPlot(pixel_smooth, position_legend = "right", yLab = "NDVI")
 
-rmPlot(pixel_cluster)
+# rmPlot(pixel_cluster, position_legend = "bottom", yLab = "NDVI")
 
-rmPlot(sephora_fit)
+
+
+# dim(sephora_fit$xSmooth$fitOptAIC)
+# length(sephora_fit$series)
+# sephora_fit$series
+
+years_cluster <- (2000:2025)[sephora_fit$series]
+
+df_cluster <- data.frame(
+  DoY = factor(rep(1:23, times = length(years_cluster))),
+  years = factor(rep(years_cluster, each = 23)),
+  values = as.numeric(t(sephora_fit$xSmooth$fitOptAIC[
+    sephora_fit$series, ,
+    drop = FALSE
+  ]))
+)
+
+
+ggplot(
+  df_cluster,
+  aes(
+    x = DoY,
+    y = values,
+    group = years,
+    colour = years
+  )
+) +
+  geom_line() +
+  geom_point()
+
+
+outlier_idx <- setdiff(1:26, sephora_fit$series)
+
+df_outliers <- data.frame(
+  DoY = factor(rep(1:23, times = length(outlier_idx))),
+  years = factor(rep(diff_years, each = 23)),
+  values = as.numeric(
+    t(
+      sephora_fit$xSmooth$fitOptAIC[
+        outlier_idx,
+        ,
+        drop = FALSE
+      ]
+    )
+  )
+)
+
+ggplot(
+  df_outliers,
+  aes(
+    x = DoY,
+    y = values,
+    group = years,
+    colour = years
+  )
+) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2)
+
+
+#  TODO: include in rmPlot function
+# if( inherits(x, "sephora") ){
+#   
+#   years_cluster <- (x$startYear:x$endYear)[x$series]
+#   
+#   df <- data.frame(
+#     DoY = factor(rep(1:x$freq, times = length(years_cluster))),
+#     years = factor(rep(years_cluster, each = x$freq)),
+#     values = as.numeric(
+#       t(x$xSmooth$fitOptAIC[x$series,,drop=FALSE])
+#     )
+#   )
+# }
+
+# rmPlot(sephora_fit)
 
 # --- sephora_fit sobre puesto
 
-x_axis <- get_metadata_years(x=pixel_cluster,
-                             startYear=2000, endYear=2025, frequency=23)
-
-
-x_axis_correct <- list()
-x_axis_correct$xDates <- x_axis$xDates[-c( (11*23+1):(12*23), (16*23+1):(17*23) )]
-x_axis_correct$xLabels <- x_axis$xLabels[-c(12,17)]
-
-DoY <- seq(1,365, by = ceiling(365/23) ) #seq(1,365, length.out=23)
-DoY_aux <- seq(1,365, length.out=23)-1
-fpca_DoY <- sephora_fit$fpcaFun0Der(t=DoY_aux)
-
-# sephora_fit$fpcaFun0Der(t=DoY)
-# sephora_fit$fpcaFun0Der(t=DoY_aux)
+# x_axis <- get_metadata_years(x=pixel_cluster,
+#                              startYear=2000, endYear=2025, frequency=23)
 # 
-# plot(DoY, sephora_fit$fpcaFun0Der(t=DoY))
-# abline(v=0)
-# plot(DoY_aux, sephora_fit$fpcaFun0Der(t=DoY_aux))
-# abline(v=0)
+# 
+# x_axis_correct <- list()
+# x_axis_correct$xDates <- x_axis$xDates[-c( (11*23+1):(12*23), (16*23+1):(17*23) )]
+# x_axis_correct$xLabels <- x_axis$xLabels[-c(12,17)]
+# 
+# DoY <- seq(1,365, by = ceiling(365/23) ) #seq(1,365, length.out=23)
+# DoY_aux <- seq(1,365, length.out=23)-1
+# fpca_DoY <- sephora_fit$fpcaFun0Der(t=DoY_aux)
+# 
+# ggFull <- tsPlot(sephora_fit, yLab = "NDVI", xLab = "")
+# 
+# COLORS <- unique( ggplot_build(ggFull)$data[1][[1]]$colour )[-c(12,17)]
+# number_observations <- length(years_cluster)*23
+# 
+# df <- data.frame(values=c(pixel_cluster[-c( (11*23+1):(12*23), (16*23+1):(17*23) )], 
+#                           fpca_DoY),
+#                  years=as.factor(rep(c(x_axis_correct$xLabels, 
+#                                        "Idealized Phenology"), each=23)),
+#                  DoY=factor(DoY, levels=DoY),
+#                  # DoY=factor(DoY, levels=nameMONTH),
+#                  class=c(rep(1,number_observations), rep(2,23)))
+# 
+# gg_fpca <- ggplot(data=df,
+#                   aes(x=DoY, y=values, group=years, colour=years)) +
+#   ggplot2::geom_line(linewidth = c(rep(1,number_observations), rep(4,23))) +
+#   geom_point(size = 2) + #sizePoint=2
+#   # ggplot2::labs(y="NDVI", x="", color="years+FPCA") +
+#   ggplot2::labs(y="NDVI", x="", color="") +
+#   ggplot2::scale_color_manual(values = c(COLORS, "#FF4500")) +
+#   ggplot2::theme(legend.position = "bottom")# +
+# 
+# gg_fpca
 
-ggFull <- tsPlot(sephora_fit, yLab = "NDVI", xLab = "")
 
-COLORS <- unique( ggplot_build(ggFull)$data[1][[1]]$colour )[-c(12,17)]
-number_observations <- 24*23
+# --- ALT
 
-df <- data.frame(values=c(pixel_cluster[-c( (11*23+1):(12*23), (16*23+1):(17*23) )], 
-                          fpca_DoY),
-                 years=as.factor(rep(c(x_axis_correct$xLabels, 
-                                       "Idealized Phenology"), each=23)),
-                 DoY=factor(DoY, levels=DoY),
-                 # DoY=factor(DoY, levels=nameMONTH),
-                 class=c(rep(1,number_observations), rep(2,23)))
+curves_cluster <-
+  sephora_fit$xSmooth$fitOptAIC[
+    sephora_fit$series,
+    ,
+    drop = FALSE
+  ]
+
+values_cluster <- as.numeric(t(curves_cluster))
+
+years_cluster <- (2000:2025)[sephora_fit$series]
+
+df <- data.frame(
+  values = c(values_cluster, fpca_DoY),
+  years = factor(
+    rep(
+      c(years_cluster, "Idealized Phenology"),
+      each = 23
+    )
+  ),
+  DoY = factor(DoY, levels = DoY),
+  class = c(
+    rep(1, length(values_cluster)),
+    rep(2, 23)
+  )
+)
 
 gg_fpca <- ggplot(data=df,
                   aes(x=DoY, y=values, group=years, colour=years)) +
@@ -243,6 +350,8 @@ gg_fpca <- ggplot(data=df,
 
 gg_fpca
 
+
+# ---
 
 # --- PhenoParams
 
@@ -260,12 +369,11 @@ df <- data.frame(
 # Extract only the non-NA phenology points
 phenology_points <- data.frame(
   DOY = sephora_fit$phenoparams[c("GU","SoS","Mat","EoS")]/365,
-  Stage = c("Green-up","Start of Season","Maturity","End of Season")
+  Stage = c("GU","SoS","Mat","EoS")
 )
 
 # Interpolate NDVI values at those DOYs
 phenology_points$NDVI <- approx(df$DOY, df$NDVI, xout = phenology_points$DOY)$y
-
 
 cgu <- rgb(173/255,221/255,142/255)
 csos <- rgb(120/255,198/255,121/255)
@@ -277,10 +385,10 @@ cdor <- rgb(208/255, 209/255, 230/255)
 colores <- c(cgu,csos,cmat,csen,ceos,cdor)
 
 mycolors <- c(
-  "Green-up" = colores[1],
-  "Start of Season" = colores[2],
-  "Maturity" = colores[3],
-  "End of Season" = colores[5]
+  "GU" = colores[1],
+  "SoS" = colores[2],
+  "Mat" = colores[3],
+  "EoS" = colores[5]
 )
 
 # ggplot(df, aes(x = DOY, y = NDVI)) +
@@ -356,7 +464,6 @@ ggplot(df, aes(x = DOY, y = NDVI)) +
     legend.text = element_text(size = 17, face = "bold"),
     axis.text.x = element_text(size = 10, face = "bold"))
 
-
 # --- parallel code 
 
 dir.create(here( "RData", "mohinora_sephora" ))
@@ -367,15 +474,45 @@ mohinora_dtw2 <- phenopar_polygon(product = "independent",
                               save_all = TRUE,
                               distance = "dtw2",
                               basis = BASIS,
-                              numCores = 20,
+                              numCores = 6,
                               k=3,
                               confiBand = TRUE,
                               dirToSave = here( "RData", "mohinora_sephora" ),
                                 # paste0(getwd(), "/RData/chunk_3_2/output"),
-                              outputFileBaseName = "mohinora_dtw2_sample_100")
+                              outputFileBaseName = "mohinora_dtw2_sample_75")
 
+# --- 
 
+source( "Rscripts/extract_sephora.R" )
 
+output_chunk = LoadToEnvironment( paste0( getwd(), "/RData/mohinora_sephora/mohinora_dtw2_sample_100_phenoParams.RData" ))$output
+
+# --- extract_sephora está en extract_sephora.R 
+fpca = extract_sephora(x = output_chunk, object = "fpca" )
+
+phenoparams = extract_sephora(x = output_chunk, object = "phenoparams" )
+
+# --- otros objetos que se pueden extraer fácilmente son:
+# "x" := serie de tiempo (ts) original
+# "m_aug_smooth" := matriz con ts suavizadas, aumentadas a 75 puntos; 
+# "clustering" := objeto tsclust con resultados de clustering (basado en dtw2); 
+# "fpca_harmfit_params" := objeto con parámetros de ajuste vía regresión armónica; 
+# "fpca_fun_0der" := objeto function para reproducir-remuestrear el ajuste vía fpca; 
+# "fpca_fun_1der" := objeto function para reproducir-remuestrear la primera derivada del ajuste vía fpca
+# "fpca_fun_2der" := objeto function para reproducir-remuestrear la segunda derivada del ajuste vía fpca
+# "fpca_fun_3der" := objeto function para reproducir-remuestrear la tercera derivada del ajuste vía fpca
+# "fpca_fun_4der" := objeto function para reproducir-remuestrear la cuarta derivada del ajuste vía fpca
+# NOTA: para extraer otro objeto se puede adaptar extract_sephora, en caso de ser necesario
+# yo puedo generar la adaptación sólo háganmelo saber.
+# PARAMETROS disponibles: x, sigma, x_smooth, m_aug_smooth, usedTotal, series,
+# clusterSize, dominatingClusterSize, clustering, fpca, fpca_harmfit_params, 
+# fpca_fun_0der, fpca_fun_1der, fpca_fun_2der, fpca_fun_3der, fpca_fun_4der,
+# phenoparams, mixedmodel_status, mixedmodel_inverted, optimal_num_harms
+
+# --- Guardando fpca & phenoparams en archivos RDS -más económicos que RData 
+saveRDS(fpca, file = file.path( getwd(), "RData/mohinora_sephora/fpca.rds" ) )
+
+saveRDS(phenoparams, file = file.path( getwd(), "RData/NDVI_2016_2024_chunk4/output/chunk4_dtw2_phenoparams.rds" ) )
 
 
 
