@@ -14,10 +14,11 @@
 
 library(terra)
 library(sf)
-library(tmap)
+# library(tmap)
 library(raster)
 library(here)
 library(dplyr)
+library(tidyterra)
 
 library(sephora)
 
@@ -515,6 +516,285 @@ saveRDS(fpca, file = file.path( getwd(), "RData/mohinora_sephora/fpca.rds" ) )
 saveRDS(phenoparams, file = file.path( getwd(), "RData/NDVI_2016_2024_chunk4/output/chunk4_dtw2_phenoparams.rds" ) )
 
 
+# --- output_extraction ---
+
+source( "Rscripts/extract_sephora.R" )
+
+output_chunk = LoadToEnvironment( paste0( getwd(), "/RData/mohinora_sephora/mohinora_dtw2_sample_100_phenoParams.RData" ))$output
+
+# --- extract_sephora está en extract_sephora.R 
+fpca = extract_sephora(x = output_chunk, object = "fpca" )
+
+phenoparams = extract_sephora(x = output_chunk, object = "phenoparams" )
+
+# --- otros objetos que se pueden extraer fácilmente son:
+# "x" := serie de tiempo (ts) original
+# "m_aug_smooth" := matriz con ts suavizadas, aumentadas a 75 puntos; 
+# "clustering" := objeto tsclust con resultados de clustering (basado en dtw2); 
+# "fpca_harmfit_params" := objeto con parámetros de ajuste vía regresión armónica; 
+# "fpca_fun_0der" := objeto function para reproducir-remuestrear el ajuste vía fpca; 
+# "fpca_fun_1der" := objeto function para reproducir-remuestrear la primera derivada del ajuste vía fpca
+# "fpca_fun_2der" := objeto function para reproducir-remuestrear la segunda derivada del ajuste vía fpca
+# "fpca_fun_3der" := objeto function para reproducir-remuestrear la tercera derivada del ajuste vía fpca
+# "fpca_fun_4der" := objeto function para reproducir-remuestrear la cuarta derivada del ajuste vía fpca
+# NOTA: para extraer otro objeto se puede adaptar extract_sephora, en caso de ser necesario
+# yo puedo generar la adaptación sólo háganmelo saber.
+# PARAMETROS disponibles: x, sigma, x_smooth, m_aug_smooth, usedTotal, series,
+# clusterSize, dominatingClusterSize, clustering, fpca, fpca_harmfit_params, 
+# fpca_fun_0der, fpca_fun_1der, fpca_fun_2der, fpca_fun_3der, fpca_fun_4der,
+# phenoparams, mixedmodel_status, mixedmodel_inverted, optimal_num_harms
+
+# --- Guardando fpca & phenoparams en archivos RDS -más económicos que RData 
+saveRDS(fpca, file = file.path( getwd(), "RData/mohinora_sephora/fpca.rds" ) )
+
+saveRDS(phenoparams, file = file.path( getwd(), "RData/mohinora_sephora/phenoparams.rds" ) )
+
+
+# --- spliting by groups
+
+na_pattern <- apply(is.na(phenoparams), 1, 
+                    function(x) paste(which(x), collapse = "_"))
+na_pattern[na_pattern == ""] <- "complete"
+
+unique(na_pattern)
+
+# "complete"
+
+group_A <- phenoparams[na_pattern == "complete", ] # 35 pixels
+
+# "4_6"
+group_B <- phenoparams[na_pattern == "4_6", ] # 4679 pixels
+
+# "4_5_6"
+group_C <- phenoparams[na_pattern == "4_5_6", ] # 122 pixels
+
+
+# --- Getting actual pixels
+
+pxl_group <- as.numeric(unlist(lapply(rownames(group_A), 
+                                      function(s) strsplit(s, "result.")[[1]][2] )))
+
+fpca_group <- fpca[pxl_group]
+
+mat_fpca_group <- matrix(nrow = length(fpca_group), ncol = 75)
+
+for(i in 1:length(fpca_group)){
+  mat_fpca_group[i,] <-  fpca_group[[i]]
+}
+
+mins_grupo <- apply(mat_fpca_group, 1, min) 
+
+positive_fpca_group <- which(mins_grupo > 0) # length(positive_fpca_group)
+
+pxl_group_positive <- pxl_group[positive_fpca_group] # (B,211580 pxls); (H, 52 pxls)
+
+fpca_group_positive <- fpca_group[positive_fpca_group]
+
+P <- sample(1:length(pxl_group_positive), 1)
+plot(fpca_group_positive[[P]], type="l", 
+     main= paste0("Pixel-", P, " Grupo A"),
+     ylab = "")
+
+# --- Visuals
+
+positive_groupA_coords <- mohinora_DATA_rTp$coords[pxl_group_positive,]
+
+positive_groupA_sf <- st_as_sf(
+  data.frame(positive_groupA_coords),
+  coords = c("x", "y"),  # adjust column names if needed
+  crs = crs(mohinora_DATA)    # match raster CRS
+)
+
+# 3. Create the plot
+pa <- 
+  ggplot() +
+  # Plot the background raster layer
+  geom_spatraster(data = subset(mohinora_DATA, 453)) +
+  
+  # Overlay the simple feature points
+  geom_sf(data = positive_groupA_sf, 
+          color = "red", 
+          size = 2, 
+          alpha = 0.8) +
+  
+  # Choose a color palette for your raster values (e.g., viridis)
+  scale_fill_viridis_c(na.value = "transparent", name = "Value") +
+  
+  # Apply a clean theme for spatial maps
+  theme_minimal() +
+  labs(
+    title = "Spatial Points Overlaid on Raster",
+    x = "",
+    y = ""
+  )
+
+pa
+
+# --- group B
+
+pxl_group <- as.numeric(unlist(lapply(rownames(group_B), 
+                                      function(s) strsplit(s, "result.")[[1]][2] )))
+
+fpca_group <- fpca[pxl_group]
+
+mat_fpca_group <- matrix(nrow = length(fpca_group), ncol = 75)
+
+for(i in 1:length(fpca_group)){
+  mat_fpca_group[i,] <-  fpca_group[[i]]
+}
+
+mins_grupo <- apply(mat_fpca_group, 1, min) 
+
+positive_fpca_group <- which(mins_grupo > 0)
+
+pxl_group_positive <- pxl_group[positive_fpca_group] #
+
+fpca_group_positive <- fpca_group[positive_fpca_group]
+
+P <- sample(1:length(pxl_group_positive), 1)
+plot(fpca_group_positive[[P]], type="l", 
+     main= paste0("Pixel-", P, " Grupo B"),
+     ylab = "")
+
+# --- Visuals
+
+positive_groupB_coords <- mohinora_DATA_rTp$coords[pxl_group_positive,]
+
+positive_groupB_sf <- st_as_sf(
+  data.frame(positive_groupB_coords),
+  coords = c("x", "y"),  # adjust column names if needed
+  crs = crs(mohinora_DATA)    # match raster CRS
+)
+
+
+# 3. Create the plot
+pb <- 
+  ggplot() +
+  # Plot the background raster layer
+  geom_spatraster(data = subset(mohinora_DATA, 453)) +
+  
+  # Overlay the simple feature points
+  geom_sf(data = positive_groupB_sf, 
+          color = "red", 
+          size = 2, 
+          alpha = 0.8) +
+  
+  # Choose a color palette for your raster values (e.g., viridis)
+  scale_fill_viridis_c(na.value = "transparent", name = "Value") +
+  
+  # Apply a clean theme for spatial maps
+  theme_minimal() +
+  labs(
+    title = "Spatial Points Overlaid on Raster",
+    x = "",
+    y = ""
+  )
+
+pb
+
+# --- group C
+
+pxl_group <- as.numeric(unlist(lapply(rownames(group_C), 
+                                      function(s) strsplit(s, "result.")[[1]][2] )))
+
+fpca_group <- fpca[pxl_group]
+
+mat_fpca_group <- matrix(nrow = length(fpca_group), ncol = 75)
+
+for(i in 1:length(fpca_group)){
+  mat_fpca_group[i,] <-  fpca_group[[i]]
+}
+
+mins_grupo <- apply(mat_fpca_group, 1, min) 
+
+positive_fpca_group <- which(mins_grupo > 0)
+
+pxl_group_positive <- pxl_group[positive_fpca_group] # 
+
+fpca_group_positive <- fpca_group[positive_fpca_group]
+
+P <- sample(1:length(pxl_group_positive), 1)
+plot(fpca_group_positive[[P]], type="l", 
+     main= paste0("Pixel-", P, " Grupo B"),
+     ylab = "")
+
+# --- Visuals
+
+positive_groupC_coords <- mohinora_DATA_rTp$coords[pxl_group_positive,]
+
+positive_groupC_sf <- st_as_sf(
+  data.frame(positive_groupC_coords),
+  coords = c("x", "y"),  # adjust column names if needed
+  crs = crs(mohinora_DATA)    # match raster CRS
+)
+
+
+# 3. Create the plot
+pc <- 
+  ggplot() +
+  # Plot the background raster layer
+  geom_spatraster(data = subset(mohinora_DATA, 453)) +
+  
+  # Overlay the simple feature points
+  geom_sf(data = positive_groupC_sf, 
+          color = "red", 
+          size = 2, 
+          alpha = 0.8) +
+  
+  # Choose a color palette for your raster values (e.g., viridis)
+  scale_fill_viridis_c(na.value = "transparent", name = "Value") +
+  
+  # Apply a clean theme for spatial maps
+  theme_minimal() +
+  labs(
+    title = "Spatial Points Overlaid on Raster",
+    x = "",
+    y = ""
+  )
+
+pc
+
+# --- Visuals combined
+
+temp <- st_transform(mohinora_USV, st_crs(positive_groupA_sf))
+
+# 2. Crop the points down to the shapefile boundary
+cropped_points_A <- st_intersection(positive_groupA_sf, temp)
+cropped_points_B <- st_intersection(positive_groupB_sf, temp)
+cropped_points_C <- st_intersection(positive_groupC_sf, temp)
+
+ggplot() +
+  # Background raster layer
+  geom_spatraster(data = subset( mohinora_DATA, 453 )) +
+  
+  # Layer 1: Cropped Group A Points
+  geom_sf(data = cropped_points_A, aes(color = "Group A"), size = 2.5, alpha = 0.8) +
+  
+  # Layer 2: Cropped Group B Points
+  geom_sf(data = cropped_points_B, aes(color = "Group B"), size = 2.5, alpha = 0.8) +
+  
+  # Layer 3: Cropped Group C Points
+  geom_sf(data = cropped_points_C, aes(color = "Group C"), size = 2.5, alpha = 0.8) +
+  
+  # Optional: Overlay the shapefile border for visual reference
+  geom_sf(data = mohinora_USV, fill = NA, color = "black", linewidth = 0.5) +
+  
+  # Color palette for your 3 point categories
+  scale_color_manual(
+    name = "Point Groups",
+    values = c("Group A" = "#E41A1C", "Group B" = "#377EB8", "Group C" = "#4DAF4A")
+  ) +
+  
+  # Color palette for the underlying raster values
+  scale_fill_viridis_c(na.value = "transparent", name = "Raster Value") +
+  
+  # Styling for clean maps
+  theme_minimal() +
+  labs(
+    title = "Cropped Point Groups Overlaid on Raster",
+    x = "",
+    y = ""
+  )
 
 
 
