@@ -24,15 +24,6 @@ library(sephora)
 
 source( "Rscripts/auxFUN.R" )
 
-# (!require("BiocManager", quietly = TRUE))
-# install.packages("BiocManager")
-# 
-# BiocManager::install("ComplexHeatmap", force = TRUE)
-# 
-# library(ComplexHeatmap)
-
-# --- DATA Loading
-
 # --- DATA Loading
 
 mohinora_NDVI_DIRS <- list.dirs(path = here("data", "mohinora_2026") )
@@ -56,7 +47,6 @@ shpFiles <- list.files(path = here("data", "mohinora_usv7"),
                        full.names = TRUE)
 
 mohinora_USV <- read_sf(shpFiles[1])
-
 
 # ------------------
 # ---- SEPHORA --- #
@@ -311,7 +301,6 @@ ggplot(
 # 
 # gg_fpca
 
-
 # --- ALT
 
 curves_cluster <-
@@ -350,7 +339,6 @@ gg_fpca <- ggplot(data=df,
   ggplot2::theme(legend.position = "bottom")# +
 
 gg_fpca
-
 
 # ---
 

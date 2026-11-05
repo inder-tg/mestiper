@@ -412,3 +412,12 @@ getYear <- function(start=2000, end=2018, bp, freq=23){
   year
 }
 
+
+# --- Added OCT 22, 2026
+# --- Functions to produce idealized ndvi plot over time series in dominating cluster
+
+
+
+
+
+
