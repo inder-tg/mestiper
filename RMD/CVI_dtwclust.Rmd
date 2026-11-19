@@ -1,0 +1,334 @@
+---
+title: "CVI: Índices de Validez de Clústers"
+author: "Inder Tecuapetla"
+header-style:
+  - \usepackage[T1]{fontenc}
+  - \usepackage[utf8]{inputenc}
+  - \usepackage{subfigure}
+  - \newcommand{\tn}[1]{\textnormal{#1}}
+  - \newcommand{\ind}{{1\hspace{-2.5pt}\tn{l}}}
+  - \usepackage{amsmath}
+  - \newcommand{\bs}[1]{\boldsymbol{#1}}
+  - \usepackage[mathscr]{eucal}
+  - \newcommand{\B}[1]{\boldsymbol{\mathcal{#1}}}
+  - \newcommand{\prob}{\B{P}}
+  - \newcommand{\mb}[1]{\mathbb{#1}}
+  - newcommand{\R}{\mb{R}}
+
+header-includes: 
+  - \usepackage{subfigure}
+  - \usepackage{ragged2e}
+date: "8/03/2024"
+output: beamer_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## ¿Qué es un CVI?
+
+Un **Índice de Validez de Clústers** _Cluster Validity Index (CVI)_ es una medida numérica utilizada para evaluar qué tan buena es una solución de clustering.
+
+En lugar de inspeccionar visualmente un dendrograma y decidir subjetivamente cuántos grupos existen, un CVI cuantifica:
+
+  - Compacidad: qué tanto se parecen los miembros de un clúster.
+  
+  - Separación: qué tan diferentes son los clústeres entre sí.
+  
+  - Concordancia con una verdad de referencia: cuando se tienen etiquetas reales.
+  
+  
+## _dtwclust_
+
+En el paquete _dtwclust_, los **CVI** permiten comparar resultados obtenidos con diferentes:
+
+  - números de clústeres ($k$)
+  
+  - métodos de enlace ( _linkage_ )
+  
+  - medidas de distancia (DTW o Euclidiana)
+  
+  - métodos de cálculo de centroides
+
+
+## CVI interno vs externo
+
+Los **CVI** pueden clasificarse en:
+
+  - **Internos:** utilizan únicamente los datos y la partición generada.
+  
+  - **Externos:** comparan la partición obtenida con etiquetas conocidas o clases
+  reales.
+  
+## La matemática detrás de los CVI
+
+Consideremos un conjunto de datos 
+
+\[
+  X = \{ x_1, x_2, \ldots, x_n\}
+\]
+
+agrupado en
+
+\[
+  C = \{ C_1, C_2, \ldots, C_k\}.
+\]
+
+En términos generales, un CVI está definido como
+
+\[
+  CVI = f( X, C, d ),
+\]
+
+donde $d(\cdot,\cdot)$ es la medida de distancia utilizada.
+
+## CVI internos
+
+Los indices internos buscan maximizar la relación:
+
+\[
+  \textnormal{Calidad} \propto \frac{ \textnormal{Separación entre clústers} }{ Dispersión dentro de los clústers }.
+\]
+
+Así, un buen clustering debe presentar:
+
+  - distancias grandes entre clústers diferentes
+  
+  - distancias pequeñas dentro de cada clúster.
+
+## CVI internos: Silhouette
+
+Para una observación $x_i$:
+
+\begin{align*}
+  a( x_i ) 
+  &= 
+  \textnormal{distancia promedio intra-clúster},\\
+  b( x_i )
+  &=
+  \textnormal{menor distancia promedio a otro clúster}
+\end{align*}
+
+Entonces se define
+
+\[
+  s(x_i) = \frac{ b(x_i) - a(x_i) }{ \max( a(x_i), b(x_i) ) }
+\]
+
+para llegar al índice general:
+
+\[
+  S = \frac{ 1 }{ n }\,\sum_{i=1}^n\,s(x_i).
+\]
+
+Interpretación: valores más grandes indican mejor clustering.
+
+## CVI internos: Dunn
+
+En esta caso, el índice general está definido como
+
+\[
+  D = \frac{ \min_{r\neq s}\, \delta( C_r, C_s ) }{ \max_q\, \Delta(C_q) },
+\]
+
+donde
+
+  - $\delta$ representa la distancia entre clústers
+  
+  - $\Delta$ representa el diámetro de un clúster
+  
+Interpretación: valores más grandes indican mejor clustering.
+
+## CVI internos: Davies-Bouldin (DB)
+
+En esta caso, el índice general está definido como
+
+\[
+  DB = \frac{1}{k}\,\sum_{i=1}^{k}\,\max_{j \neq i} \left( \frac{ S_i + S_j }{M_{ij}} \right)
+\]
+
+donde
+
+  - $S_i$ es la dispersión interna del clúster $C_i$
+  
+  - $M_{ij}$ es la distancia entre los centroides de los clústers $C_i$ y $C_j$
+
+Interpretación: valores más pequeños indican mejor separación entre clústers.
+  
+
+## CVI externos
+
+Cuando tenemos etiquetas reales $Y$, el índice se calcula como
+
+\[
+  \textnormal{CVI} = g(C, Y)
+\]
+
+donde se evalúa qué tan bien coincide la partición obtenida con las clases verdaderas.
+
+
+## CVI externos: Índice Rand Ajustado (ARI)
+
+En este caso, el índice general está definido como
+
+\[
+  \textnormal{ARI} 
+  =
+  \frac{ \textnormal{Acuerdo observado} - \textnormal{Acuerdo esperado} }{\textnormal{Acuerdo máximo} - \textnormal{Acuerdo esperado}}
+\]
+
+Interpretación:
+
+  - $ARI = 1$, coincidencia perfecta.
+  
+  - $ARI = 0$, acuerdo coincidente al azar.
+
+Valores mayores son mejores.
+
+## Métricas CVI disponibles en _dtwclust_
+
+La función _cvi()_ de _dtwclust_ puede calcular varios índices para evaluar particiones obtenidas mediante clustering jerárquico.
+
+\begin{table}[ht] 
+\centering 
+\begin{tabular}{lll} 
+\hline 
+\textbf{Métrica} & \textbf{Descripción} & \textbf{Objetivo} \\ 
+\hline Sil & Coeficiente Silhouette & Maximizar \\ 
+D & Índice de Dunn & Maximizar \\ 
+COP & Índice COP & Minimizar \\ 
+DB & Índice Davies--Bouldin & Minimizar \\ 
+DBstar & Davies--Bouldin Modificado (DB*) & Minimizar \\ 
+\hline 
+\end{tabular} 
+\caption{Índices de validez internos disponibles en \texttt{dtwclust}.} 
+\end{table}
+
+## Métricas CVI disponibles en _dtwclust_
+
+\begin{table}[ht] 
+\centering 
+\begin{tabular}{lll} 
+\hline 
+\textbf{Métrica} & \textbf{Descripción} & \textbf{Objetivo} \\ 
+\hline RI & Rand Index & Maximizar \\ 
+ARI & Adjusted Rand Index & Maximizar \\ 
+J & Jaccard Index & Maximizar \\ 
+FM & Fowlkes--Mallows Index & Maximizar \\ 
+VI & Variation of Information & Minimizar \\ 
+\hline 
+\end{tabular} 
+\caption{Índices de validez externos disponibles en \texttt{dtwclust}.} 
+\end{table}
+
+## Aplicación al clustering jerárquico
+
+En clustering jerárquico, el procedimiento típico consiste en:
+
+  1. Construir el dendrograma.
+  
+  2. Cortar el dendrograma para diferentes valores de $k$.
+  
+  3. Obtener las asignaciones de clúster correspondientes.
+  
+  4. Calcular uno o varios CVI para cada partición.
+  
+  5. Seleccionar el valor de $k$ que optimice la métrica elegida.
+
+## Aplicación al clustering jerárquico: Un ejemplo
+
+\begin{align*}
+  k=2 &\rightarrow Sil=0.39\\
+  k=3 &\rightarrow Sil=0.52\\
+  k=4 &\rightarrow Sil=0.48
+\end{align*}
+
+En este caso, se elegiría $k=3$ porque maximiza el coeficiente Silhouette.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
