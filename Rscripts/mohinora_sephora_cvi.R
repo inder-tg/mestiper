@@ -15,6 +15,10 @@
 # --- PARTITION Similarity Measures used include: Variation Information (VI), Adjusted
 # --- Rand and Jaccard
 
+# --- UPDATED on Nov 19, 2026
+# --- USED Agriculture polygon and applied cvi to find 2 clusters and 4 clusters according
+# --- to Silhouette and DBStar cvi, respectively.
+
 library(dtwclust)
 library(terra)
 library(here)
@@ -26,18 +30,14 @@ LoadToEnvironment <- function(RData, env = new.env()){
   return(env) 
 }
 
-output_mohinora_agro <- LoadToEnvironment( here("mestiper", "RData", "mohinora_sephora", 
+output_mohinora_agro <- LoadToEnvironment( here("RData", "mohinora_sephora", 
                                                 "AGRICULTURA DE TEMPORAL ANUAL",
                                                 "mohinora_dtw2_sample_75_clusterSize_0p65_phenoParams.RData") )$output
-  
-  # paste0( getwd(), "/RData/mohinora_agro/mohinora_agro_phenoParams.RData" ))$output
 
-mohinora_agro <- LoadToEnvironment( here("mestiper", "RData", "mohinora_sephora", 
+mohinora_agro <- LoadToEnvironment( here("RData", "mohinora_sephora", 
                                          "AGRICULTURA DE TEMPORAL ANUAL",
                                          "rTp.RData") )$rTp
   
-  # paste0( getwd(), "/RData/mohinora_agro/mohinora_agro.RData" ))$rTp
-
 # --- PRELIMINARIES
 
 # hclust methods:
@@ -113,9 +113,19 @@ for(i in 1:length(hc_out)){
 }
 
 save(hc_out, cvi_eval_hc_out_k, 
-     file = here( "mestiper",  "RData", "mohinora_sephora", 
+     file = here( "RData", "mohinora_sephora", 
                   "AGRICULTURA DE TEMPORAL ANUAL",
                   "hc_cvi.RData" ))
+
+
+hc_out <- LoadToEnvironment( here("RData", "mohinora_sephora", 
+                                             "AGRICULTURA DE TEMPORAL ANUAL",
+                                             "hc_cvi.RData") )$hc_out
+
+cvi_eval_hc_out_k <- LoadToEnvironment( here("RData", "mohinora_sephora", 
+                                                     "AGRICULTURA DE TEMPORAL ANUAL",
+                                                     "hc_cvi.RData") )$cvi_eval_hc_out_k
+
 
 # --- Slihoutte
 
@@ -125,11 +135,13 @@ for(i in 2:length(hc_out)){
 }
 colnames(Sil_matrix) <- METHODS
 
-# Sil_matrix[-1,]
-# 
-# max(Sil_matrix[-1,])
-# 
-# which(Sil_matrix[-1,] == max(Sil_matrix[-1,]), arr.ind=TRUE)
+Sil_matrix[-1,]
+
+max(Sil_matrix[-1,]) # ward.D2 [2] & complete [4]
+
+which(Sil_matrix[-1,] == max(Sil_matrix[-1,]), arr.ind=TRUE) # 2 cluster
+
+# --- Dunn
 
 D_matrix <- matrix(nrow=length(hc_out), ncol=8)
 for(i in 2:length(hc_out)){
@@ -137,11 +149,27 @@ for(i in 2:length(hc_out)){
 }
 colnames(D_matrix) <- METHODS
 
+D_matrix[-1,]
+
+max(D_matrix[-1,]) # single [3] & average [5] & centroid [8]
+
+which(D_matrix[-1,] == max(D_matrix[-1,]), arr.ind=TRUE) # 2 clusters
+
+# --- COP
+
 COP_matrix <- matrix(nrow=length(hc_out), ncol=8)
 for(i in 2:length(hc_out)){
   COP_matrix[i,] <- cvi_eval_hc_out_k[[i]][12,]
 }
 colnames(COP_matrix) <- METHODS
+
+COP_matrix[-1,]
+
+min(COP_matrix[-1,]) # ward.D [20]
+
+which(COP_matrix[-1,] == min(COP_matrix[-1,]), arr.ind=TRUE)
+
+# --- DB*
 
 DBstar_matrix <- matrix(nrow=length(hc_out), ncol=8)
 for(i in 2:length(hc_out)){
@@ -149,11 +177,28 @@ for(i in 2:length(hc_out)){
 }
 colnames(DBstar_matrix) <- METHODS
 
+DBstar_matrix[-1,]
+
+min(DBstar_matrix[-1,]) # mcquitty [6]
+
+which(DBstar_matrix[-1,] == min(DBstar_matrix[-1,]), arr.ind=TRUE) # 4 clusters
+
+# --- CH
+
 CH_matrix <- matrix(nrow=length(hc_out), ncol=8)
 for(i in 2:length(hc_out)){
   CH_matrix[i,] <- cvi_eval_hc_out_k[[i]][8,]
 }
 colnames(CH_matrix) <- METHODS
+
+CH_matrix[-1,]
+
+max(CH_matrix[-1,]) # mcquitty [1]
+
+which(CH_matrix[-1,] == max(CH_matrix[-1,]), arr.ind=TRUE) # 2 clusters
+
+
+# ---
 
 SF_matrix <- matrix(nrow=length(hc_out), ncol=8)
 for(i in 2:length(hc_out)){
@@ -161,37 +206,16 @@ for(i in 2:length(hc_out)){
 }
 colnames(SF_matrix) <- METHODS
 
-Sil_matrix[-1,]
+SF_matrix[-1,]
 
-which(Sil_matrix[-1,] == max(Sil_matrix[-1,]),
-      arr.ind=TRUE) # ward.D2, complete
+max(SF_matrix[-1,]) # mcquitty [1]
 
-CH_matrix[-1,]
+# which(SF_matrix[-1,] == max(CH_matrix[-1,]), arr.ind=TRUE)
 
-which(CH_matrix[-1,] == max(CH_matrix[-1,]),
-      arr.ind=TRUE) # mcquitty
+# --- Espacialización de los resultados ---
 
-DBstar_matrix[-1,]
-
-which(DBstar_matrix[-1,] == min(DBstar_matrix[-1,]),
-      arr.ind=TRUE) # mcquitty
-
-D_matrix[-1,]
-
-which(D_matrix[-1,] == max(D_matrix[-1,]),
-      arr.ind=TRUE) #single, average, centroid
-
-COP_matrix[-1,]
-
-which(COP_matrix[-1,] == min(COP_matrix[-1,]),
-      arr.ind=TRUE) # ward.D
-
-# SF_matrix[-1,]
-# 
-# which(SF_matrix[-1,] == max(SF_matrix[-1,]),
-#       arr.ind=TRUE)
-
-shpFiles <- list.files(path = here("mestiper", "data", "mohinora_usv7"),
+shpFiles <- list.files(path = here("data", 
+                                   "mohinora_usv7"),
                        pattern = ".shp",
                        full.names = TRUE)
 
@@ -237,22 +261,28 @@ for(i in Sil_indCluster2){
 
 plot( st_geometry( mohinora_USV ), main = "DBstar" )
 
-DBstar_indCluster1 = which(hc_out[[3]][[6]]@cluster == 1)
-DBstar_CLUSTER1 = vector("list", sum( hc_out[[3]][[6]]@cluster == 1 ))
+DBstar_indCluster1 = which(hc_out[[4]][[6]]@cluster == 1)
+DBstar_CLUSTER1 = vector("list", sum( hc_out[[4]][[6]]@cluster == 1 ))
 for(i in DBstar_indCluster1){
   DBstar_CLUSTER1[[i]] = FPCA_trim[[i]]
 }
 
-DBstar_indCluster2 = which(hc_out[[3]][[6]]@cluster == 2)
-DBstar_CLUSTER2 = vector("list", sum( hc_out[[3]][[6]]@cluster == 2 ))
+DBstar_indCluster2 = which(hc_out[[4]][[6]]@cluster == 2)
+DBstar_CLUSTER2 = vector("list", sum( hc_out[[4]][[6]]@cluster == 2 ))
 for(i in DBstar_indCluster2){
   DBstar_CLUSTER2[[i]] = FPCA_trim[[i]]
 }
 
-DBstar_indCluster3 = which(hc_out[[3]][[6]]@cluster == 3)
-DBstar_CLUSTER3 = vector("list", sum( hc_out[[3]][[6]]@cluster == 3 ))
+DBstar_indCluster3 = which(hc_out[[4]][[6]]@cluster == 3)
+DBstar_CLUSTER3 = vector("list", sum( hc_out[[4]][[6]]@cluster == 3 ))
 for(i in DBstar_indCluster3){
   DBstar_CLUSTER3[[i]] = FPCA_trim[[i]]
+}
+
+DBstar_indCluster4 = which(hc_out[[4]][[6]]@cluster == 4)
+DBstar_CLUSTER4 = vector("list", sum( hc_out[[4]][[6]]@cluster == 4 ))
+for(i in DBstar_indCluster4){
+  DBstar_CLUSTER4[[i]] = FPCA_trim[[i]]
 }
 
 
@@ -270,6 +300,13 @@ for(i in DBstar_indCluster3){
   points(x=mohinora_agro$coords[i,1], y=mohinora_agro$coords[i,2], 
          pch=18, col="purple")
 }
+# ---
+for(i in DBstar_indCluster4){
+  points(x=mohinora_agro$coords[i,1], y=mohinora_agro$coords[i,2], 
+         pch=18, col="yellow")
+}
+
+
 
 plot(DBstar_CLUSTER1[[DBstar_indCluster1[1]]], type="l", col="red", 
      ylim=c(0,1e4),
@@ -286,5 +323,171 @@ for(i in DBstar_indCluster2){
 for(i in DBstar_indCluster3){
   lines(DBstar_CLUSTER3[[i]], col= "purple")
 }
+# ---
+for(i in DBstar_indCluster4){
+  lines(DBstar_CLUSTER4[[i]], col= "yellow")
+}
+
+
+# --- SPIRAL plot
+
+library(ggnewscale)
+library(vcd)
+library(spiralize)
+library(kableExtra)
+
+source("Rscripts/getDist_phenoParam.R")
+source("Rscripts/getSpiralPlot.R")
+source("Rscripts/extract_sephora.R")
+source("Rscripts/sephora_auxFUN.R")
+
+# ---
+
+# --- colors used in spiralPlot below
+cgu <- rgb(173/255,221/255,142/255)
+csos <- rgb(120/255,198/255,121/255)
+cmat <- rgb(49/255, 163/255,84/255)
+csen <- rgb(217/255, 95/255, 14/255)
+ceos <- rgb(254/255, 153/255, 41/255)
+cdor <- rgb(208/255, 209/255, 230/255)
+
+colores <- c(cgu,csos,cmat,csen,ceos,cdor)
+
+# --- how to get a SpiralPlot
+
+DIRS <- list.dirs( here( "RData", "mohinora_sephora" ) )[-1]
+
+list_DIRS <- setNames( as.list(DIRS), basename(DIRS) )
+
+RDataFILES <- list.files( path = list_DIRS$`AGRICULTURA DE TEMPORAL ANUAL`, pattern = ".RData",
+                          full.names = TRUE )
+
+sephora_phenoparams_agro <- LoadToEnvironment( RDataFILES[3] )$output
+
+
+mohinora_params_agro <- extract_sephora(x = sephora_phenoparams_agro, 
+                                        object = "phenoparams")
+
+# --- Clusters from Sil cvi
+
+mohinora_params_agro_Sil_indCluster1 <- mohinora_params_agro[Sil_indCluster1,]
+mohinora_params_agro_Sil_indCluster2 <- mohinora_params_agro[Sil_indCluster2,]
+
+getSpiralPlot(MAT=mohinora_params_agro_Sil_indCluster1, 
+              LABELS=month.name,
+              vp_param=list(width=0.5, height=0.7))
+vcd::grid_legend(x=1.215, y=0.125, pch=18, col=colores,
+                 frame=FALSE,
+                 labels=c("GU","SoS","Mat","Sen","EoS","Dor"),
+                 title="Params")
+
+getSpiralPlot(MAT=mohinora_params_agro_Sil_indCluster2, 
+              LABELS=month.name,
+              vp_param=list(width=0.5, height=0.7))
+vcd::grid_legend(x=1.215, y=0.125, pch=18, col=colores,
+                 frame=FALSE,
+                 labels=c("GU","SoS","Mat","Sen","EoS","Dor"),
+                 title="Params")
+
+# --- sephora STATS
+
+
+a <- phenoDatesToDoY(phenoDates=unlist(sephora_basicStats(mohinora_params_agro_Sil_indCluster1))[c(1,3,5,7,9,11)])
+b <- phenoDatesToDoY(phenoDates=unlist(sephora_basicStats(mohinora_params_agro_Sil_indCluster2))[c(1,3,5,7,9,11)])
+# b <- phenoDatesToDoY(phenoDates=unlist(sephora_basicStats(ayarin))[c(1,3,5,7,9,11)])
+# c <- phenoDatesToDoY(phenoDates=unlist(sephora_basicStats(pinoEncino))[c(1,3,5,7,9,11)])
+# d <- phenoDatesToDoY(phenoDates=unlist(sephora_basicStats(agro))[c(1,3,5,7,9,11)])
+
+var_a <- redondea(unlist(sephora_basicStats(mohinora_params_agro_Sil_indCluster1))[c(1,3,5,7,9,11)+1])
+var_b <- redondea(unlist(sephora_basicStats(mohinora_params_agro_Sil_indCluster2))[c(1,3,5,7,9,11)+1])
+# var_b <- redondea(unlist(sephora_basicStats(ayarin))[c(1,3,5,7,9,11)+1])
+# var_c <- redondea(unlist(sephora_basicStats(pinoEncino))[c(1,3,5,7,9,11)+1])
+# var_d <- redondea(unlist(sephora_basicStats(agro))[c(1,3,5,7,9,11)+1])
+
+df <- data.frame(#Date_Grasslands = paste( a$month, a$day, "(+", var_a, "days)"),
+  # Date_Ayarin = paste( b$month, b$day, "(+", var_b, "days)"),
+  # Date_PineOak = paste( a$month, a$day, "(+", var_a, "days)") )
+Date_Agro_Sil1 = paste( a$month, a$day, "(+", var_a, "days)"),
+Date_Agro_Sil2 = paste( b$month, b$day, "(+", var_b, "days)"))
+
+# colnames(df) <- c("Grasslands", "Douglas Fir", "Pine-Oak", "Agriculture")
+# colnames(df) <- c("Pine-Oak")
+colnames(df) <- c("Agro_Sil1", "Agro_Sil2")
+row.names(df) <- c("GU", "SoS", "Mat", "Sen", "EoS", "Dor")
+
+kbl(df,
+    longtable = T, booktabs = T, 
+    caption = "Median and median absolute deivations of estimated phenological dates for Agriculture according to the 3 clusters suggested by Silhouette CVI.") %>%
+  kable_styling(latex_options = c("hold_position"))
+
+# --- Clusters from DBStar cvi
+
+mohinora_params_agro_DBstar_indCluster1 <- mohinora_params_agro[DBstar_indCluster1,]
+mohinora_params_agro_DBstar_indCluster2 <- mohinora_params_agro[DBstar_indCluster2,]
+mohinora_params_agro_DBstar_indCluster3 <- mohinora_params_agro[DBstar_indCluster3,]
+mohinora_params_agro_DBstar_indCluster4 <- mohinora_params_agro[DBstar_indCluster4,]
+
+
+getSpiralPlot(MAT=mohinora_params_agro_DBstar_indCluster1, 
+              LABELS=month.name,
+              vp_param=list(width=0.5, height=0.7))
+vcd::grid_legend(x=1.215, y=0.125, pch=18, col=colores,
+                 frame=FALSE,
+                 labels=c("GU","SoS","Mat","Sen","EoS","Dor"),
+                 title="Params")
+
+getSpiralPlot(MAT=mohinora_params_agro_DBstar_indCluster2, 
+              LABELS=month.name,
+              vp_param=list(width=0.5, height=0.7))
+vcd::grid_legend(x=1.215, y=0.125, pch=18, col=colores,
+                 frame=FALSE,
+                 labels=c("GU","SoS","Mat","Sen","EoS","Dor"),
+                 title="Params")
+
+getSpiralPlot(MAT=mohinora_params_agro_DBstar_indCluster3, 
+              LABELS=month.name,
+              vp_param=list(width=0.5, height=0.7))
+vcd::grid_legend(x=1.215, y=0.125, pch=18, col=colores,
+                 frame=FALSE,
+                 labels=c("GU","SoS","Mat","Sen","EoS","Dor"),
+                 title="Params")
+
+getSpiralPlot(MAT=mohinora_params_agro_DBstar_indCluster4, 
+              LABELS=month.name,
+              vp_param=list(width=0.5, height=0.7))
+vcd::grid_legend(x=1.215, y=0.125, pch=18, col=colores,
+                 frame=FALSE,
+                 labels=c("GU","SoS","Mat","Sen","EoS","Dor"),
+                 title="Params")
+
+# --- sephora STATS
+
+a <- phenoDatesToDoY(phenoDates=unlist(sephora_basicStats(mohinora_params_agro_DBstar_indCluster1))[c(1,3,5,7,9,11)])
+b <- phenoDatesToDoY(phenoDates=unlist(sephora_basicStats(mohinora_params_agro_DBstar_indCluster2))[c(1,3,5,7,9,11)])
+c <- phenoDatesToDoY(phenoDates=unlist(sephora_basicStats(mohinora_params_agro_DBstar_indCluster3))[c(1,3,5,7,9,11)])
+d <- phenoDatesToDoY(phenoDates=unlist(sephora_basicStats(mohinora_params_agro_DBstar_indCluster4))[c(1,3,5,7,9,11)])
+
+var_a <- redondea(unlist(sephora_basicStats(mohinora_params_agro_DBstar_indCluster1))[c(1,3,5,7,9,11)+1])
+var_b <- redondea(unlist(sephora_basicStats(mohinora_params_agro_DBstar_indCluster2))[c(1,3,5,7,9,11)+1])
+var_c <- redondea(unlist(sephora_basicStats(mohinora_params_agro_DBstar_indCluster3))[c(1,3,5,7,9,11)+1])
+var_d <- redondea(unlist(sephora_basicStats(mohinora_params_agro_DBstar_indCluster4))[c(1,3,5,7,9,11)+1])
+
+df <- data.frame(
+  Date_Agro_DBstar1 = paste( a$month, a$day, "(+", var_a, "days)"),
+  Date_Agro_DBstar2 = paste( b$month, b$day, "(+", var_b, "days)"),
+  Date_Agro_DBstar3 = paste( c$month, c$day, "(+", var_c, "days)"),
+  Date_Agro_DBstar4 = paste( d$month, d$day, "(+", var_d, "days)")
+)
+
+colnames(df) <- c("Agro_DBstar1", "Agro_DBstar2", "Agro_DBstar3", "Agro_DBstar4")
+row.names(df) <- c("GU", "SoS", "Mat", "Sen", "EoS", "Dor")
+
+kbl(df,
+    longtable = T, booktabs = T, 
+    caption = "Median and median absolute deivations of estimated phenological dates for Agriculture according to the 4 clusters suggested by DBstar CVI.") %>%
+  # add_header_above(c(" ", "Grasslands" = 2, "Douglas Fri" = 2, "Pine-Oak"= 2,
+  #                    "Rainfed agriculture" = 2)) %>%
+  kable_styling(latex_options = c("hold_position"))
+
 
 

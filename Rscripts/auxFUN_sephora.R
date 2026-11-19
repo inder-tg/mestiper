@@ -673,6 +673,12 @@ tsPlot_prueba <- function(x,
                           position_legend = "none", title_legend = NULL,
                           xLab = "Time", yLab = "Index", xLim, ... ) {
   
+  
+  # x=pixel_sephora_smooth_AIC
+  # xLim = as.Date(c("2000-01-01", "2009-12-16"))
+  # position_legend = "bottom"
+  # xLim = as.Date(c("2015-01-01", "2019-12-16"))
+  
   obj <- .get_ts_metadata(x)
   
   startYear <- obj$startYear
@@ -731,17 +737,21 @@ tsPlot_prueba <- function(x,
   ind_end <-
     which.min( (as.numeric(x_axis$xDates) - as.numeric(xLim[2]))^2 )
   
-  A <- strsplit(
-    as.character(xLim[1]),
-    "-"
-  )
+  # A <- strsplit(
+  #   as.character(xLim[1]),
+  #   "-"
+  # )
+  # 
+  # B <- strsplit(
+  #   as.character(xLim[2]),
+  #   "-"
+  # )
   
-  B <- strsplit(
-    as.character(xLim[2]),
-    "-"
-  )
+  yrs <- as.integer(format(xLim, "%Y"))
   
-  LABELS <- (as.numeric(A[[1]][1]) %% 100):(as.numeric(B[[1]][1]) %% 100)
+  LABELS <- sprintf("%02d", (yrs[1] %% 100):(yrs[2] %% 100))
+  
+  # LABELS <- (as.numeric(A[[1]][1]) %% 100):(as.numeric(B[[1]][1]) %% 100)
   
   out_aux <- ggplot(
     df,
@@ -757,7 +767,7 @@ tsPlot_prueba <- function(x,
     ggplot_build(out_aux)$data[[1]]$colour
   )
   
-  positions_labels_in_xAxis <- match( LABELS, x_axis$xLabels)
+  positions_labels_in_xAxis <- match( LABELS, x_axis$xLabels )
   
   remainder <- length(ind_begin:ind_end) %% freq
   
@@ -849,6 +859,13 @@ rmPlot_prueba <- function(x, sizeLine = 1, sizePoint = 2,
                           title_legend = NULL, xLim, xAxis = NULL,
                           clusterView = c("all", "dominant", "highlight"), ...) {
   
+  # x=pixel_sephora
+  # xLim = as.Date(c("2000-01-01", "2009-12-16"))
+  # position_legend = "bottom"
+  # xLim = as.Date(c("2015-01-01", "2019-12-16"))
+  
+  
+  
   clusterView <- match.arg(clusterView)
   
   ## --------------------------------------------------
@@ -934,19 +951,23 @@ rmPlot_prueba <- function(x, sizeLine = 1, sizePoint = 2,
       )^2
     )
     
-    A <- strsplit(
-      as.character(xLim[1]),
-      "-"
-    )
+    # A <- strsplit(
+    #   as.character(xLim[1]),
+    #   "-"
+    # )
+    # 
+    # B <- strsplit(
+    #   as.character(xLim[2]),
+    #   "-"
+    # )
     
-    B <- strsplit(
-      as.character(xLim[2]),
-      "-"
-    )
+    yrs <- as.integer(format(xLim, "%Y"))
     
-    LABELS <-
-      (as.numeric(A[[1]][1]) %% 100):
-      (as.numeric(B[[1]][1]) %% 100)
+    LABELS <- sprintf("%02d", (yrs[1] %% 100):(yrs[2] %% 100))
+    
+    # LABELS <-
+    #   (as.numeric(A[[1]][1]) %% 100):
+    #   (as.numeric(B[[1]][1]) %% 100)
     
     remainder <-
       length(ind_begin:ind_end) %% freq
@@ -957,11 +978,18 @@ rmPlot_prueba <- function(x, sizeLine = 1, sizePoint = 2,
           (ind_end - remainder)
       ]
     
+    # years_selected <-
+    #   years_full[
+    #     years_full >= as.numeric(A[[1]][1]) &
+    #       years_full <= as.numeric(B[[1]][1])
+    #   ]
+    
     years_selected <-
       years_full[
-        years_full >= as.numeric(A[[1]][1]) &
-          years_full <= as.numeric(B[[1]][1])
+        years_full >= yrs[1] &
+          years_full <= yrs[2]
       ]
+    
     
     df <- data.frame(
       DoY = factor(
