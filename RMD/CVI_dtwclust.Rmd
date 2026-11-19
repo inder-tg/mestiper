@@ -98,9 +98,7 @@ Así, un buen clustering debe presentar:
   - distancias pequeñas dentro de cada clúster.
 
 ## CVI internos: Silhouette
-
 Para una observación $x_i$:
-
 \begin{align*}
   a( x_i ) 
   &= 
