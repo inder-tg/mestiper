@@ -8,6 +8,10 @@ phenoDatesToDoY <- function(start = 1, end = 12, phenoDates,
                  "Au.", "Sep.", "Oc.", "No.", "De.")
   
   MoY <- numeric(length(phenoDates))
+  
+  # jdjdjdjdjd
+  
+  
   DoM <- numeric(length(phenoDates))
   period <- start:end
   for( i in 1:length(MoY) ){
